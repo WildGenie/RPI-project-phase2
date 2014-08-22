@@ -64,7 +64,7 @@ namespace iContrAll.TcpServer
 						try
 						{
 							numberOfBytesRead = clientStream.Read(readBuffer, 0, bufferSize);
-							Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);
+							// Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);
 						}
 						catch(ArgumentOutOfRangeException)
 						{
@@ -127,7 +127,7 @@ namespace iContrAll.TcpServer
 
 				int messageType = BitConverter.ToInt32(messageTypeArray, 0);
 
-				Console.WriteLine(clientState.ToString());
+				// Console.WriteLine(clientState.ToString());
 				if (clientState != ClientState.LoginOK && messageType != (byte)MessageType.LoginRequest)
 				{
 					return returnList;
@@ -195,8 +195,8 @@ namespace iContrAll.TcpServer
 			int messageLength = m.Length;
 			string message = m.Content;
 
-			Console.WriteLine("Message type: {0}\nMessage length: {1}\nMessage: {2}", messageType, messageLength, message);
-
+			//Console.WriteLine("Message type: {0}\nMessage length: {1}\nMessage: {2}", (MessageType)messageType, messageLength, message);
+            Console.WriteLine("Message: Type={0}: {1}", (MessageType)messageType, message);
 			// TODO: kidolgozni!!!
 			//Dictionary<MessageType, CreateAnswerDelegate> requestReplyMap = new Dictionary<MessageType, CreateAnswerDelegate>();
 			//requestReplyMap.Add(MessageType.LoginRequest, CreateLoginResponse);
@@ -265,6 +265,8 @@ namespace iContrAll.TcpServer
 			//Console.WriteLine("SendCommandOnRadio: " + message);
 
             // string sendMessage = "00000112LC10000101xxxx1xxxxxxx";
+
+            Console.WriteLine("SendCommandOnRadio: " + message);
 
 			string senderId = System.Configuration.ConfigurationManager.AppSettings["loginid"];
 			string senderIdInMsg = message.Substring(0, 8);
@@ -535,7 +537,7 @@ namespace iContrAll.TcpServer
 
 		private byte[] CreateAnswerDeviceList()
 		{
-			Console.WriteLine("AnswerDeviceList called.");
+			//Console.WriteLine("AnswerDeviceList called.");
 			byte[] answer;
 			using (var dal = new DataAccesLayer())
 			{
@@ -608,7 +610,7 @@ namespace iContrAll.TcpServer
 
 		private byte[] CreateAnswerDeviceDetails()
 		{
-			Console.WriteLine("AnswerDeviceDetails called.");
+			//Console.WriteLine("AnswerDeviceDetails called.");
 			byte[] answer;
 			using (var dal = new DataAccesLayer())
 			{
@@ -731,7 +733,7 @@ namespace iContrAll.TcpServer
 
 		private byte[] CreateAnswerPlaceList()
 		{
-			Console.WriteLine("AnswerPlaceList called.");
+			//Console.WriteLine("AnswerPlaceList called.");
 			byte[] answer;
 			using (var dal = new DataAccesLayer())
 			{
@@ -857,7 +859,7 @@ namespace iContrAll.TcpServer
 
 		private byte[] CreateAnswerActionList()
 		{
-			Console.WriteLine("AnswerActionList called.");
+			//Console.WriteLine("AnswerActionList called.");
 			byte[] answer;
 			using (var dal = new DataAccesLayer())
 			{
