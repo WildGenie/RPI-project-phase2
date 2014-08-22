@@ -20,9 +20,13 @@ namespace iContrAll.TcpServer
         public Server(int port)
         {
             this.radio = new RadioCommunication();
-            if(radio.InitRadio())
+            if (radio.InitRadio())
             {
                 Console.WriteLine("Radio init sikeres");
+            }
+            else
+            {
+                Console.WriteLine("Radio init NEM sikeres");
             }
             radio.RadioMessageReveived += ProcessReceivedRadioMessage;
 
@@ -41,6 +45,10 @@ namespace iContrAll.TcpServer
             {
                 Console.WriteLine("Radio init sikeres");
             }
+            else
+            {
+                Console.WriteLine("Radio init NEM sikeres");
+            }
             radio.RadioMessageReveived += ProcessReceivedRadioMessage;
         }
 
@@ -48,7 +56,8 @@ namespace iContrAll.TcpServer
         {
             if (e.ErrorCode == -1)
             {
-                this.initRadio();
+                Console.WriteLine("Radio '-1' error code-dal jött vissza, EXCEPTION az INTERRUPT-BAN!");
+                // this.initRadio();
                 return;
             }
             

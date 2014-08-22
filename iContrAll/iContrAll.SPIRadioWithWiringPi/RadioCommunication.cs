@@ -9,6 +9,16 @@ namespace iContrAll.SPIRadio
 {
     public class RadioCommunication
     {
+        enum State { None, Send, Receive };
+
+        State state;
+        byte[] data = new byte[RadioConstants.FIX_PACKET_LENGTH];
+
+        public RadioCommunication()
+        {
+            state = State.None;
+        }
+
         public delegate void RadioMessageArrivedDelegate(RadioMessageEventArgs e);
         public event RadioMessageArrivedDelegate RadioMessageReveived;
 
@@ -16,7 +26,7 @@ namespace iContrAll.SPIRadio
         {
             try
             {
-                state = '0';
+                state = State.None;
 
                 if (Init.WiringPiSetup() < 0)
                 {
@@ -61,14 +71,13 @@ namespace iContrAll.SPIRadio
             }
             catch(Exception e)
             {
+                Console.WriteLine("RADIO INIT EXCEPTION");
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
                 return false;
             }
         }
         
-        byte[] data = new byte[RadioConstants.FIX_PACKET_LENGTH];
-
         //public bool SendMessage(string senderId, string targetId, string hexa, 
         //                    string channels, string voltage, byte[]chDim)
         public bool SendMessage(byte[] message)
@@ -115,10 +124,11 @@ namespace iContrAll.SPIRadio
                 return true;
             }
             catch(Exception e)
-            {   
+            {
+                Console.WriteLine("EXCEPTION A 'SendMessage'-ben!!!");
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
-                InitRadio();
+                
                 return false;
             }
         }
@@ -137,17 +147,13 @@ namespace iContrAll.SPIRadio
             }
         }
 
-        char state = '0';
-
-        
-
         unsafe void Interrupt0()
         {
             try
             {
                 Console.WriteLine("interrup ugras eleje ok");
                 Console.WriteLine("state: " + state);
-                if (state == 'r')
+                if (state == State.Receive)
                 {
                     Console.WriteLine("packet received");
                     Read_Rx_Fifo(RadioConstants.P, data);
@@ -164,7 +170,7 @@ namespace iContrAll.SPIRadio
                     //Console.WriteLine(s);
                 }
 
-                if (state == 't')
+                if (state == State.Send)
                 {
                     Console.WriteLine("packet sent");
                     GPIO.digitalWrite(RadioConstants.TXRX, 0);
@@ -174,7 +180,9 @@ namespace iContrAll.SPIRadio
             }
             catch(Exception e )
             {
+                Console.WriteLine("EXCEPTION AZ 'Interrupt0'-ban!!!!");
                 Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
                 if (RadioMessageReveived != null)
                 {
                     RadioMessageReveived(new RadioMessageEventArgs(string.Empty, -1));
@@ -213,7 +221,6 @@ namespace iContrAll.SPIRadio
                 SPI.wiringPiSPIDataRW(p, pT, 2);
             }
 
-
             CTS();
         }
 
@@ -229,7 +236,7 @@ namespace iContrAll.SPIRadio
 
         unsafe void RX_Command(int p)
         {
-            state = 'r';
+            state = State.Receive;
             byte[] d = new byte[] { RadioConstants.CMD_START_RX, 0, 0, 0, RadioConstants.FIX_PACKET_LENGTH, 0, 0, 0 };
             fixed (byte* pD = d)
             {
@@ -299,7 +306,7 @@ namespace iContrAll.SPIRadio
 
         unsafe void TX_Command(int p)
         {
-            state = 't';
+            state = State.Send;
             GPIO.digitalWrite(RadioConstants.TXRX, 1);
             byte[] d = new byte[] { RadioConstants.CMD_START_TX, 0, 0, 0, RadioConstants.FIX_PACKET_LENGTH, 0 };
             fixed (byte* pD = d)
