@@ -15,20 +15,9 @@ namespace iContrAll.TcpServer
         private Thread listenThread;
         private int port;
 
-        private RadioCommunication radio;
-
         public Server(int port)
         {
-            this.radio = new RadioCommunication();
-            if (radio.InitRadio())
-            {
-                Console.WriteLine("Radio init sikeres");
-            }
-            else
-            {
-                Console.WriteLine("Radio init NEM sikeres");
-            }
-            radio.RadioMessageReveived += ProcessReceivedRadioMessage;
+            Radio.Instance.RadioMessageReveived += ProcessReceivedRadioMessage;
 
             this.port = port;
             this.tcpListener = new TcpListener(IPAddress.Any, this.port);
@@ -83,7 +72,7 @@ namespace iContrAll.TcpServer
                 Console.WriteLine("Client connected: {0}", client.Client.RemoteEndPoint);
 
                 // TODO: start() a servicehandlernek
-                ServiceHandler sh = new ServiceHandler(client, radio);
+                new ServiceHandler(client);
             }
         }
     }

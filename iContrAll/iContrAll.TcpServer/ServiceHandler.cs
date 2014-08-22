@@ -1,4 +1,5 @@
-﻿using System;
+﻿using iContrAll.SPIRadio;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -21,25 +22,11 @@ namespace iContrAll.TcpServer
 		private TcpClient tcpClient;
 		private ClientState clientState;
 		
-		private SPIRadio.RadioCommunication radio;
-
 		public EndPoint Endpoint { get { return tcpClient.Client.RemoteEndPoint; } }
 
 		public ServiceHandler(TcpClient client)
 		{
 			this.tcpClient = client;
-			clientState = ClientState.LoginPhase;
-
-			Thread commThread = new Thread(HandleMessages);
-			commThread.Start();
-		}
-
-		public ServiceHandler(TcpClient client, SPIRadio.RadioCommunication radio)
-		{
-			// TODO: Complete member initialization
-			this.tcpClient = client;
-			this.radio = radio;
-
 			clientState = ClientState.LoginPhase;
 
 			Thread commThread = new Thread(HandleMessages);
@@ -304,7 +291,7 @@ namespace iContrAll.TcpServer
 
                     byte[] retBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + channelControl + "xxxx" + "xxxx");
 
-                    this.radio.SendMessage(retBytes);
+                    Radio.Instance.SendMessage(retBytes);
                     
                     return;
 				}
@@ -342,7 +329,7 @@ namespace iContrAll.TcpServer
 
                         //Array.Copy(basicBytes, retBytes, basicBytes.Length);
                         //Array.Copy(dimValues, basicBytes.Length, retBytes, 0, 4);
-                        //this.radio.SendMessage(retBytes);
+                        //Radio.Instance.SendMessage(retBytes);
 
                         //return;
 
@@ -357,13 +344,13 @@ namespace iContrAll.TcpServer
 
                         dimValues[channelId] = (byte)100;
                         Array.Copy(dimValues, basicBytes.Length, retBytes, 0, 4);
-                        this.radio.SendMessage(retBytes);
+                        Radio.Instance.SendMessage(retBytes);
                         for (int i = 19; i >= 0 ; i--)
                         {
                             Thread.Sleep(250);
                             dimValues[channelId] = (byte)(i*5);
                             Array.Copy(dimValues, basicBytes.Length, retBytes, 0, 4);
-                            this.radio.SendMessage(retBytes);
+                            Radio.Instance.SendMessage(retBytes);
 
                         }
                         for (int i = 0; i <= 20; i++)
@@ -371,7 +358,7 @@ namespace iContrAll.TcpServer
                             Thread.Sleep(250);
                             dimValues[channelId] = (byte)(i * 5);
                             Array.Copy(dimValues, basicBytes.Length, retBytes, 0, 4);
-                            this.radio.SendMessage(retBytes);
+                            Radio.Instance.SendMessage(retBytes);
 
                         }
 
@@ -412,7 +399,7 @@ namespace iContrAll.TcpServer
                     retArray[retArray.Length - 2] = b;
                     retArray[retArray.Length - 1] = Convert.ToByte('x');
 
-                    this.radio.SendMessage(retArray);
+                    Radio.Instance.SendMessage(retArray);
 
                     return;
                 }
@@ -438,7 +425,7 @@ namespace iContrAll.TcpServer
                     retArray[retArray.Length - 2] = b;
                     retArray[retArray.Length - 1] = Convert.ToByte('x');
 
-                    this.radio.SendMessage(retArray);
+                    Radio.Instance.SendMessage(retArray);
 
                     return;
                 }
@@ -460,7 +447,7 @@ namespace iContrAll.TcpServer
                         retArray[retArray.Length - 2] = b;
                         retArray[retArray.Length - 1] = Convert.ToByte('s');
 
-                        this.radio.SendMessage(retArray);
+                        Radio.Instance.SendMessage(retArray);
                     }
                     return;
                 }
@@ -468,7 +455,7 @@ namespace iContrAll.TcpServer
 
             }
 
-            //this.radio.SendMessage(senderId, )
+            //Radio.Instance.SendMessage(senderId, )
 		}
 
 		private byte[] BuildMessage(int msgNumber, byte[] message)
