@@ -18,6 +18,7 @@ namespace iContrAll.SPIRadio
 
         private Radio()
         {
+            Console.WriteLine("!!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!");
             state = RadioState.None;
             
             if (InitRadio())
