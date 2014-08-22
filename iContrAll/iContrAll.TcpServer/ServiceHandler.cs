@@ -72,7 +72,11 @@ namespace iContrAll.TcpServer
 							continue;
 						}
 
-						if (numberOfBytesRead <= 0) break;
+                        if (numberOfBytesRead <= 0)
+                        {
+                            Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, tcpClient.Client.RemoteEndPoint.ToString());
+                            break;
+                        }
 
 						Console.WriteLine("Message (length={1}) received from: {0} at {2}", tcpClient.Client.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
 
@@ -96,7 +100,9 @@ namespace iContrAll.TcpServer
 			finally
 			{
 				clientStream.Close();
+
 				tcpClient.Close();
+                Console.WriteLine("TcpClient zár");
 			}
 		}
 

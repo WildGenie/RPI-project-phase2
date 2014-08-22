@@ -111,12 +111,14 @@ namespace iContrAll.SPIRadio
                 data[62] = 10;
                 data[63] = 13;
 
+                Console.WriteLine("this.ToString() a data összerakás után" + this.ToString());
                 // írás
                 Write_Tx_Fifo(RadioConstants.P, data);
+                Console.WriteLine("this.ToString() a write tx fifo után" + this.ToString());
                 Clear_Int_Flags(RadioConstants.P);
-
+                Console.WriteLine("this.ToString() a clear int flags után" + this.ToString());
                 TX_Command(RadioConstants.P);
-
+                Console.WriteLine("this.ToString() a txcommand után" + this.ToString());
                 Console.WriteLine("Elvileg a kiküldés végére ér");
 
                 Thread.Sleep(RadioConstants.DD);
