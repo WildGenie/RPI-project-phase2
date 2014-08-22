@@ -208,6 +208,8 @@ namespace iContrAll.SPIRadio
             fixed (byte* pData = tempData)
             {
                 SPI.wiringPiSPIDataRW(p, pData, RadioConstants.FIX_PACKET_LENGTH + 1);
+                Console.WriteLine("Read_Rx_Fifo: wiringPiSPIDataRW " + tempData);
+
             }
 
 
@@ -217,15 +219,18 @@ namespace iContrAll.SPIRadio
             }
 
             CTS();
+            Console.WriteLine("Read_Rx_Fifo: CTS()");
             byte[] t = new byte[] { 0x15, 0x03 };
 
 
             fixed (byte* pT = t)
             {
                 SPI.wiringPiSPIDataRW(p, pT, 2);
+                Console.WriteLine("Read_Rx_Fifo: wiringPiSPIDataRW " + t);
             }
 
             CTS();
+            Console.WriteLine("Read_Rx_Fifo: CTS()");
         }
 
         unsafe void Clear_Int_Flags(int p)
@@ -234,8 +239,10 @@ namespace iContrAll.SPIRadio
             fixed (byte* pA = a)
             {
                 SPI.wiringPiSPIDataRW(p, pA, a.Length);
+                Console.WriteLine("Clear_Int_Flags: wiringPiSPIDataRW " + a);
             }
             CTS();
+            Console.WriteLine("Clear_Int_Flags: CTS()");
         }
 
         unsafe void RX_Command(int p)
@@ -245,8 +252,10 @@ namespace iContrAll.SPIRadio
             fixed (byte* pD = d)
             {
                 SPI.wiringPiSPIDataRW(p, pD, d.Length);
+                Console.WriteLine("RX_Command: wiringPiSPIDataRW " + d);
             }
             CTS();
+            Console.WriteLine("RX_Command: CTS()");
         }
 
         unsafe void power_up()
@@ -274,7 +283,7 @@ namespace iContrAll.SPIRadio
             //	unsigned char config[30][17];
             int i, j, k;
             byte len;
-            byte[] data = new byte[16];
+            byte[] tempData = new byte[16];
             byte[] ARRAY = RadioConstants.RADIO_CONFIGURATION_DATA_ARRAY;
             k = 0;
             len = 1;
@@ -284,10 +293,10 @@ namespace iContrAll.SPIRadio
                 // ????????????????????????????
                 if (len > 0)
                     for (j = 1; j < (int)len + 1; j++)
-                        data[j - 1] = ARRAY[i + j + k];
+                        tempData[j - 1] = ARRAY[i + j + k];
                 if (len > 0)
                 {
-                    fixed (byte* pData = data)
+                    fixed (byte* pData = tempData)
                     {
                         SPI.wiringPiSPIDataRW(p, pData, len);
                     }
@@ -307,20 +316,24 @@ namespace iContrAll.SPIRadio
             fixed (byte* pData = tempData)
             {
                 SPI.wiringPiSPIDataRW(p, pData, RadioConstants.FIX_PACKET_LENGTH + 1);
+                Console.WriteLine("Write_Tx_Fifo: wiringPiSPIDataRW " + tempData);
             }
             CTS();
+            Console.WriteLine("Write_Tx_Fifo: CTS()");
         }
 
         unsafe void TX_Command(int p)
         {
-            state = State.Send;
-            GPIO.digitalWrite(RadioConstants.TXRX, 1);
+            state = State.Send; Console.WriteLine("TX_Command: state changed to: " + state);
+            GPIO.digitalWrite(RadioConstants.TXRX, 1); Console.WriteLine("TX_Command: txrx = > 1");
             byte[] d = new byte[] { RadioConstants.CMD_START_TX, 0, 0, 0, RadioConstants.FIX_PACKET_LENGTH, 0 };
             fixed (byte* pD = d)
             {
                 SPI.wiringPiSPIDataRW(p, pD, d.Length);
+                Console.WriteLine("TX_Command: wiringPiSPIDataRW " + d);
             }
             CTS();
+            Console.WriteLine("TX_Command: CTS()");
         }
     }
 }
