@@ -299,15 +299,15 @@ namespace iContrAll.TcpServer
                     this.radio.SendMessage(retBytes);
                     
                     return;
-					//sthis.radio.SendMessage(senderIdInMsg, targetIdInMsg, "01", channelControl, "xxxx", )
 				}
                 
                 if (eqPos == 4)
                 {
                     if (command[2] == 'd')
                     {
-                        #region normal mukodes
+                       
                         int.TryParse(command[3].ToString(), out channelId);
+                         #region normal mukodes
                         //string dim = command.Substring(eqPos + 1);
 
                         //int iOfPoint = command.IndexOf('.');
@@ -338,6 +338,8 @@ namespace iContrAll.TcpServer
 
                         //return;
 
+                        #endregion
+
                         byte[] basicBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + "xxxx" + "xxxx");
                         byte[] retBytes = new byte[basicBytes.Length + 4];
                         Array.Copy(basicBytes, retBytes, basicBytes.Length);
@@ -366,12 +368,7 @@ namespace iContrAll.TcpServer
                         }
 
                         return;
-
-                        #endregion
-
-
                     }
-                    
                 }
 
                 return;
@@ -423,9 +420,6 @@ namespace iContrAll.TcpServer
 
                     char directionChar = state == 1 ? 'u' : ((state == 0)? 'd': 'x');
                     byte b = 255;
-
-
-
 
                     string retMessage = senderIdInMsg + targetIdInMsg + "01" + "x" + directionChar;
                     byte[] retList = Encoding.UTF8.GetBytes(retMessage);

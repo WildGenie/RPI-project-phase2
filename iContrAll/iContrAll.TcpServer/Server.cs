@@ -37,21 +37,6 @@ namespace iContrAll.TcpServer
             this.listenThread.Start();
         }
 
-        private void initRadio()
-        {
-            this.radio = null;
-            this.radio = new RadioCommunication();
-            if (radio.InitRadio())
-            {
-                Console.WriteLine("Radio init sikeres");
-            }
-            else
-            {
-                Console.WriteLine("Radio init NEM sikeres");
-            }
-            radio.RadioMessageReveived += ProcessReceivedRadioMessage;
-        }
-
         private void ProcessReceivedRadioMessage(RadioMessageEventArgs e)
         {
             if (e.ErrorCode == -1)

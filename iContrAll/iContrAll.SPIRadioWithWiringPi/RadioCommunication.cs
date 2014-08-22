@@ -19,8 +19,8 @@ namespace iContrAll.SPIRadio
             state = State.None;
         }
 
-        public delegate void RadioMessageArrivedDelegate(RadioMessageEventArgs e);
-        public event RadioMessageArrivedDelegate RadioMessageReveived;
+        public delegate void RadioMessageReceivedDelegate(RadioMessageEventArgs e);
+        public event RadioMessageReceivedDelegate RadioMessageReveived;
 
         public bool InitRadio()
         {
@@ -152,7 +152,10 @@ namespace iContrAll.SPIRadio
             try
             {
                 Console.WriteLine("interrup ugras eleje ok");
+                Console.WriteLine("this.ToString()" + this.ToString());
+                Console.WriteLine("data: "+ Encoding.UTF8.GetString(this.data));
                 Console.WriteLine("state: " + state);
+
                 if (state == State.Receive)
                 {
                     Console.WriteLine("packet received");
@@ -161,7 +164,7 @@ namespace iContrAll.SPIRadio
                     RX_Command(RadioConstants.P);
 
                     string s = Encoding.UTF8.GetString(data);
-
+                    Console.WriteLine("Interrupt, message received: " + s);
                     if (RadioMessageReveived != null)
                     {
                         RadioMessageReveived(new RadioMessageEventArgs(s, 0));
@@ -183,6 +186,7 @@ namespace iContrAll.SPIRadio
                 Console.WriteLine("EXCEPTION AZ 'Interrupt0'-ban!!!!");
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
+                
                 if (RadioMessageReveived != null)
                 {
                     RadioMessageReveived(new RadioMessageEventArgs(string.Empty, -1));
@@ -192,16 +196,16 @@ namespace iContrAll.SPIRadio
 
         unsafe void Read_Rx_Fifo(int p, byte[] x)
         {
-            byte[] data = new byte[RadioConstants.FIX_PACKET_LENGTH + 1];
-            data[0] = RadioConstants.CMD_RX_FIFO_READ;
+            byte[] tempData = new byte[RadioConstants.FIX_PACKET_LENGTH + 1];
+            tempData[0] = RadioConstants.CMD_RX_FIFO_READ;
 
             for (int i = 0; i < RadioConstants.FIX_PACKET_LENGTH; i++)
             {
-                data[i + 1] = 0;
+                tempData[i + 1] = 0;
             }
 
 
-            fixed (byte* pData = data)
+            fixed (byte* pData = tempData)
             {
                 SPI.wiringPiSPIDataRW(p, pData, RadioConstants.FIX_PACKET_LENGTH + 1);
             }
@@ -209,7 +213,7 @@ namespace iContrAll.SPIRadio
 
             for (int i = 0; i < RadioConstants.FIX_PACKET_LENGTH; i++)
             {
-                x[i] = data[i + 1];
+                x[i] = tempData[i + 1];
             }
 
             CTS();
@@ -294,10 +298,13 @@ namespace iContrAll.SPIRadio
 
         unsafe void Write_Tx_Fifo(int p, byte[] x)
         {
-            byte[] data = new byte[RadioConstants.FIX_PACKET_LENGTH + 1];
-            for (int i = 0; i < RadioConstants.FIX_PACKET_LENGTH; i++) data[i + 1] = x[i];
-            data[0] = RadioConstants.CMD_TX_FIFO_WRITE;
-            fixed (byte* pData = data)
+            byte[] tempData = new byte[RadioConstants.FIX_PACKET_LENGTH + 1];
+            for (int i = 0; i < RadioConstants.FIX_PACKET_LENGTH; i++)
+            {
+                tempData[i + 1] = x[i];
+            }
+            tempData[0] = RadioConstants.CMD_TX_FIFO_WRITE;
+            fixed (byte* pData = tempData)
             {
                 SPI.wiringPiSPIDataRW(p, pData, RadioConstants.FIX_PACKET_LENGTH + 1);
             }
