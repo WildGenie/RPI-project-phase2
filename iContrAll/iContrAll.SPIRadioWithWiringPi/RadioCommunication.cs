@@ -208,7 +208,7 @@ namespace iContrAll.SPIRadio
             fixed (byte* pData = tempData)
             {
                 SPI.wiringPiSPIDataRW(p, pData, RadioConstants.FIX_PACKET_LENGTH + 1);
-                Console.WriteLine("Read_Rx_Fifo: wiringPiSPIDataRW " + tempData);
+                Console.WriteLine("Read_Rx_Fifo: wiringPiSPIDataRW " + Encoding.UTF8.GetString(tempData));
 
             }
 
@@ -226,7 +226,7 @@ namespace iContrAll.SPIRadio
             fixed (byte* pT = t)
             {
                 SPI.wiringPiSPIDataRW(p, pT, 2);
-                Console.WriteLine("Read_Rx_Fifo: wiringPiSPIDataRW " + t);
+                Console.WriteLine("Read_Rx_Fifo: wiringPiSPIDataRW " + Encoding.UTF8.GetString(t));
             }
 
             CTS();
@@ -239,7 +239,7 @@ namespace iContrAll.SPIRadio
             fixed (byte* pA = a)
             {
                 SPI.wiringPiSPIDataRW(p, pA, a.Length);
-                Console.WriteLine("Clear_Int_Flags: wiringPiSPIDataRW " + a);
+                Console.WriteLine("Clear_Int_Flags: wiringPiSPIDataRW " + Encoding.UTF8.GetString(a));
             }
             CTS();
             Console.WriteLine("Clear_Int_Flags: CTS()");
@@ -252,7 +252,7 @@ namespace iContrAll.SPIRadio
             fixed (byte* pD = d)
             {
                 SPI.wiringPiSPIDataRW(p, pD, d.Length);
-                Console.WriteLine("RX_Command: wiringPiSPIDataRW " + d);
+                Console.WriteLine("RX_Command: wiringPiSPIDataRW " + Encoding.UTF8.GetString(d));
             }
             CTS();
             Console.WriteLine("RX_Command: CTS()");
@@ -316,7 +316,7 @@ namespace iContrAll.SPIRadio
             fixed (byte* pData = tempData)
             {
                 SPI.wiringPiSPIDataRW(p, pData, RadioConstants.FIX_PACKET_LENGTH + 1);
-                Console.WriteLine("Write_Tx_Fifo: wiringPiSPIDataRW " + tempData);
+                Console.WriteLine("Write_Tx_Fifo: wiringPiSPIDataRW " + Encoding.UTF8.GetString(tempData));
             }
             CTS();
             Console.WriteLine("Write_Tx_Fifo: CTS()");
@@ -330,7 +330,7 @@ namespace iContrAll.SPIRadio
             fixed (byte* pD = d)
             {
                 SPI.wiringPiSPIDataRW(p, pD, d.Length);
-                Console.WriteLine("TX_Command: wiringPiSPIDataRW " + d);
+                Console.WriteLine("TX_Command: wiringPiSPIDataRW " + Encoding.UTF8.GetString(d));
             }
             CTS();
             Console.WriteLine("TX_Command: CTS()");
