@@ -127,19 +127,20 @@ namespace iContrAll.SsdpServerLib
                 {
                     buffer.Socket.ReceiveFrom(buffer.Buffer, ref buffer.SenderEndPoint);
 
-                    Console.WriteLine("Received from: {0}", buffer.SenderIPEndPoint.ToString());
+                    // Console.WriteLine("Received from: {0}", buffer.SenderIPEndPoint.ToString());
 
                     var dgram = buffer.Buffer;
                     if (dgram != null && dgram.Length > 0 && IsDgramMSearch(dgram))
                     {
-                        Console.WriteLine("Datagram:\n{0}", Encoding.UTF8.GetString(dgram));
+                        Console.WriteLine("M-SEARCH Received from: {0}", buffer.SenderIPEndPoint.ToString());
+                        // Console.WriteLine("Datagram:\n{0}", Encoding.UTF8.GetString(dgram));
 
                         Socket responseSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                         byte[] sendbuf = CreateAliveResponse(getLocalIPAddress(), identifier, identifier, 900);
                         //byte[] sendbuf = Encoding.UTF8.GetBytes(identifier);
 
                         responseSocket.SendTo(sendbuf, buffer.SenderIPEndPoint);
-                        Console.WriteLine("Response sent to: {0}\n{1}", buffer.SenderIPEndPoint, Encoding.UTF8.GetString(sendbuf));
+                        //Console.WriteLine("Response sent to: {0}\n{1}", buffer.SenderIPEndPoint, Encoding.UTF8.GetString(sendbuf));
                     }
                 }
             }
