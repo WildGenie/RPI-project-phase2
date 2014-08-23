@@ -376,7 +376,9 @@ namespace iContrAll.TcpServer
                         }
                     }
 
-                    cmd.CommandText = "SELECT Actions.DeviceId, Actions.OrderNumber, Actions.ActionListId, ActionTypes.Name FROM Actions, ActionTypes WHERE ActionTypes.Id = Actions.ActionTypeId";
+                    cmd.CommandText = "SELECT Actions.DeviceId, Actions.DeviceChannel, Actions.OrderNumber, Actions.ActionListId, ActionTypes.Name "+
+                                      "FROM Actions, ActionTypes "+
+                                      "WHERE ActionTypes.Id = Actions.ActionTypeId";
                     cmd.ExecuteNonQuery();
 
                     using (var reader = cmd.ExecuteReader())
@@ -459,13 +461,12 @@ namespace iContrAll.TcpServer
             }
         }
 
-        public void AddActionToActionList(Guid actionListId, int actionType /*actionTypes.Name*/, int order, string deviceId)
+        public void AddActionToActionList(Guid actionListId, int actionType, int channel, int order, string deviceId)
         {
             try
             {
                 using (MySqlCommand cmd = mysqlConn.CreateCommand())
                 {
-
                     ActionList actionList = GetActionLists().First(l => l.Id == actionListId);
 
                     if (actionList.Actions.Count(a => a.Order == order) > 0)

@@ -303,66 +303,68 @@ namespace iContrAll.TcpServer
                        
                         int.TryParse(command[3].ToString(), out channelId);
                          #region normal mukodes
-                        //string dim = command.Substring(eqPos + 1);
+                        string dim = command.Substring(eqPos + 1);
 
-                        //int iOfPoint = command.IndexOf('.');
+                        int iOfPoint = command.IndexOf('.');
 
-                        //int dimValue;
+                        int dimValue;
 
-                        //int.TryParse(dim.Substring(0,iOfPoint), out dimValue);
+                        int.TryParse(dim.Substring(0,iOfPoint), out dimValue);
                         
-                        //byte[] dimValues = new byte[4];
-                        //for (int i = 1; i <= 4; i++)
-                        //{
-                        //    if (i == channelId)
-                        //    {
-                        //        dimValues[i] = (byte)dimValue;
-                        //    }
-                        //    else dimValues[i] = 255;
-                        //}
+                        byte[] dimValues = new byte[4];
+                        for (int i = 1; i <= 4; i++)
+                        {
+                            if (i == channelId)
+                            {
+                                dimValues[i-1] = (byte)dimValue;
+                            }
+                            else dimValues[i-1] = 255;
+                        }
 
 
-                        ////string dimString = Encoding.UTF8.GetString(dimValues);
-
-                        //byte[] basicBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + "xxxx" + "xxxx");
-                        //byte[] retBytes = new byte[basicBytes.Length + 4];
-
-                        //Array.Copy(basicBytes, retBytes, basicBytes.Length);
-                        //Array.Copy(dimValues, basicBytes.Length, retBytes, 0, 4);
-                        //Radio.Instance.SendMessage(retBytes);
-
-                        //return;
-
-                        #endregion
+                        //string dimString = Encoding.UTF8.GetString(dimValues);
 
                         byte[] basicBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + "xxxx" + "xxxx");
                         byte[] retBytes = new byte[basicBytes.Length + 4];
+
                         Array.Copy(basicBytes, retBytes, basicBytes.Length);
-
-                        byte[] dimValues = new byte[4] { 255, 255, 255, 255 };
-
-
-                        dimValues[channelId] = (byte)100;
-                        Array.Copy(dimValues, basicBytes.Length, retBytes, 0, 4);
+                        Array.Copy(dimValues, 0, retBytes, basicBytes.Length, 4);
                         Radio.Instance.SendMessage(retBytes);
-                        for (int i = 19; i >= 0 ; i--)
-                        {
-                            Thread.Sleep(250);
-                            dimValues[channelId] = (byte)(i*5);
-                            Array.Copy(dimValues, basicBytes.Length, retBytes, 0, 4);
-                            Radio.Instance.SendMessage(retBytes);
-
-                        }
-                        for (int i = 0; i <= 20; i++)
-                        {
-                            Thread.Sleep(250);
-                            dimValues[channelId] = (byte)(i * 5);
-                            Array.Copy(dimValues, basicBytes.Length, retBytes, 0, 4);
-                            Radio.Instance.SendMessage(retBytes);
-
-                        }
 
                         return;
+
+                        #endregion
+
+                        #region fényorgona
+                        //byte[] basicBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + "xxxx" + "xxxx");
+                        //byte[] retBytes = new byte[basicBytes.Length + 4];
+                        //Array.Copy(basicBytes, retBytes, basicBytes.Length);
+
+                        //byte[] dimValues = new byte[4] { 255, 255, 255, 255 };
+
+
+                        //dimValues[channelId] = (byte)100;
+                        //Array.Copy(dimValues, basicBytes.Length, retBytes, 0, 4);
+                        //Radio.Instance.SendMessage(retBytes);
+                        //for (int i = 19; i >= 0 ; i--)
+                        //{
+                        //    Thread.Sleep(250);
+                        //    dimValues[channelId] = (byte)(i*5);
+                        //    Array.Copy(dimValues, basicBytes.Length, retBytes, 0, 4);
+                        //    Radio.Instance.SendMessage(retBytes);
+
+                        //}
+                        //for (int i = 0; i <= 20; i++)
+                        //{
+                        //    Thread.Sleep(250);
+                        //    dimValues[channelId] = (byte)(i * 5);
+                        //    Array.Copy(dimValues, basicBytes.Length, retBytes, 0, 4);
+                        //    Radio.Instance.SendMessage(retBytes);
+
+                        //}
+
+                        //return;
+                        #endregion
                     }
                 }
 
@@ -948,9 +950,9 @@ namespace iContrAll.TcpServer
 			var actionsToAddOrDel = from action in actionEntries
 									select new
 									{
-										ActionListId = new Guid(action.Element("actionlistid").Value),
-										ActionId = int.Parse(action.Element("actionid").Value),
-										Order = int.Parse(action.Element("order").Value),
+										ActionListId = action.Element("actionlistid").Value,
+										ActionId = action.Element("actionid").Value,
+										Order = action.Element("order").Value,
 										DeviceId = action.Element("to").Value
 									};
 
@@ -958,10 +960,20 @@ namespace iContrAll.TcpServer
 			{
 				foreach (var a in actionsToAddOrDel)
 				{
-					if (p)
-						dal.AddActionToActionList(a.ActionListId, a.ActionId, a.Order, a.DeviceId);
-					else
-						dal.DelActionFromActionList(a.ActionListId, a.ActionId, a.Order, a.DeviceId);
+                    Guid actionListId = new Guid(a.ActionListId);
+                    
+                    int order = -1;
+                    if (int.TryParse(a.Order, out order))
+                    {
+                        continue;
+                    }
+
+                    string deviceId = a.DeviceId;
+
+					//if (p)
+						//dal.AddActionToActionList(actionListId, a.ActionId, order, deviceId);
+					//else
+						//dal.DelActionFromActionList(a.ActionListId, a.ActionId, a.Order, a.DeviceId);
 				}
 			}
 		}
