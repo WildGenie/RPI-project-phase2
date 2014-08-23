@@ -136,10 +136,10 @@ namespace iContrAll.SPIRadio
                 Console.WriteLine("this.ToString() a clear int flags után" + this.ToString());
                 TX_Command(RadioConstants.P);
                 Console.WriteLine("this.ToString() a txcommand után" + this.ToString());
+                
+
+                // Thread.Sleep(RadioConstants.DD);
                 Console.WriteLine("Elvileg a kiküldés végére ér");
-
-                Thread.Sleep(RadioConstants.DD);
-
                 return true;
             }
             catch(Exception e)
@@ -171,6 +171,10 @@ namespace iContrAll.SPIRadio
             try
             {
                 Console.WriteLine("interrup ugras eleje ok");
+                if (this == null)
+                {
+                    Console.WriteLine("tényleg szopó van");
+                }
                 Console.WriteLine("this.ToString()" + this.ToString());
                 Console.WriteLine("data: "+ Encoding.UTF8.GetString(this.data));
                 Console.WriteLine("state: " + state);

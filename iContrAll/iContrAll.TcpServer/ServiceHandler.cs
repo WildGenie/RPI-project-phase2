@@ -726,7 +726,7 @@ namespace iContrAll.TcpServer
 
 		private byte[] CreateAnswerPlaceList()
 		{
-			//Console.WriteLine("AnswerPlaceList called.");
+			Console.WriteLine("AnswerPlaceList called.");
 			byte[] answer;
 			using (var dal = new DataAccesLayer())
 			{
