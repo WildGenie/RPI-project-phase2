@@ -43,7 +43,7 @@ namespace iContrAll.TcpServer
                 Console.WriteLine("Esemény, de ReceivedBytes==null");
                 return;
             }
-            Console.WriteLine("Esemény:" + e.ReceivedBytes + " hossz=" + e.ReceivedBytes.Length);
+            Console.WriteLine("Esemény:" + Encoding.UTF8.GetString(e.ReceivedBytes) + " hossz=" + e.ReceivedBytes.Length);
 
 
             string senderId = Encoding.UTF8.GetString(e.ReceivedBytes.Take(8).ToArray());

@@ -20,7 +20,9 @@ namespace iContrAll.SPIRadio
         {
             Console.WriteLine("!!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!");
             state = RadioState.None;
-            this.InterruptReceived += Radio_InterruptReceived;
+            data = new byte[RadioConstants.FIX_PACKET_LENGTH];
+            Thread waitForInterruptThread = new Thread(WaitingForInterrupt);
+            waitForInterruptThread.Start();
             if (InitRadio())
             {
                 Console.WriteLine("Radio init sikeres");
@@ -29,11 +31,6 @@ namespace iContrAll.SPIRadio
             {
                 Console.WriteLine("Radio init NEM sikeres");
             }
-        }
-
-        void Radio_InterruptReceived()
-        {
-            
         }
 
         public static Radio Instance
@@ -53,15 +50,13 @@ namespace iContrAll.SPIRadio
         }
         #endregion
 
-        public RadioState state;
+        private volatile RadioState state;
         //public byte[] data = new byte[RadioConstants.FIX_PACKET_LENGTH];
 
         public delegate void RadioMessageReceivedDelegate(RadioMessageEventArgs e);
         public event RadioMessageReceivedDelegate RadioMessageReveived;
 
-        
-
-        private bool InitRadio()
+        private unsafe bool InitRadio()
         {
             try
             {
@@ -117,7 +112,7 @@ namespace iContrAll.SPIRadio
             }
         }
         
-        public bool SendMessage(byte[] message)
+        public unsafe bool SendMessage(byte[] message)
         {
             try
             {
@@ -174,62 +169,98 @@ namespace iContrAll.SPIRadio
                 }
             }
         }
-
+        volatile byte[] data;
         unsafe void Interrupt0()
         {
             Console.WriteLine("interrup ugras eleje ok");
-            
             try
             {
-                //Console.WriteLine("interrup ugras eleje ok");
-                if (this == null)
-                {
-                    //Console.WriteLine("tényleg szopó van");
-                }
-                // Console.WriteLine("this.ToString()" + this.ToString());
-                
-                // Console.WriteLine("data: "+ Encoding.UTF8.GetString(this.data));
-                // Console.WriteLine("state: " + state);
-
                 if (state == RadioState.Receive)
                 {
                     Console.WriteLine("packet received");
-                    byte[] receivedMessage = Read_Rx_Fifo(RadioConstants.P);
+                    Read_Rx_Fifo(RadioConstants.P);
+                    interruptFlag = true;
                     Clear_Int_Flags(RadioConstants.P);
                     RX_Command(RadioConstants.P);
-                    string s = Encoding.UTF8.GetString(receivedMessage);
-                    Console.WriteLine("Interrupt, message received: " + s);
-                    if (RadioMessageReveived != null)
-                    {
-                        RadioMessageReveived(new RadioMessageEventArgs(receivedMessage, 0));
-                    }
-
-                    //Console.WriteLine(s);
+                    
                 }
 
                 if (state == RadioState.Send)
                 {
                     Console.WriteLine("packet sent");
-                    //GPIO.digitalWrite(RadioConstants.TXRX, 0);
+                    GPIO.digitalWrite(RadioConstants.TXRX, 0);
                     Clear_Int_Flags(RadioConstants.P);
                     RX_Command(RadioConstants.P);
                 }
+               
             }
-            catch(NullReferenceException e)
+            catch (Exception e)
             {
                 Console.WriteLine("EXCEPTION AZ 'Interrupt0'-ban!!!!");
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
-                
-                //if (RadioMessageReveived != null)
-                //{
-                //    RadioMessageReveived(new RadioMessageEventArgs(null, -1));
-                //}
             }
+            
                  
         }
 
-        unsafe byte[] Read_Rx_Fifo(int p)
+        volatile bool interruptFlag = false;
+
+        public unsafe void WaitingForInterrupt()
+        {
+            while (true)
+            {
+                if (interruptFlag)
+                {
+                    interruptFlag = false;
+
+                    //string s = Encoding.UTF8.GetString(data);
+                    //Console.WriteLine("Interrupt, message received: " + s);
+                    if (RadioMessageReveived != null)
+                    {
+                        RadioMessageReveived(new RadioMessageEventArgs(data, 0));
+                    }
+                }
+                //Console.WriteLine("Worker thread: working...");
+            }
+            //Console.WriteLine("Worker thread: terminating gracefully.");
+        }
+
+        //void Radio_InterruptReceived()
+        //{
+        //    try
+        //    {
+        //        if (state == RadioState.Receive)
+        //        {
+        //            Console.WriteLine("packet received");
+        //            Read_Rx_Fifo(RadioConstants.P);
+        //            Clear_Int_Flags(RadioConstants.P);
+        //            RX_Command(RadioConstants.P);
+        //            string s = Encoding.UTF8.GetString(receivedMessage);
+        //            Console.WriteLine("Interrupt, message received: " + s);
+        //            if (RadioMessageReveived != null)
+        //            {
+        //                RadioMessageReveived(new RadioMessageEventArgs(receivedMessage, 0));
+        //            }
+        //        }
+
+        //        if (state == RadioState.Send)
+        //        {
+        //            Console.WriteLine("packet sent");
+        //            //GPIO.digitalWrite(RadioConstants.TXRX, 0);
+        //            Clear_Int_Flags(RadioConstants.P);
+        //            RX_Command(RadioConstants.P);
+        //        }
+        //    }
+        //    catch (NullReferenceException e)
+        //    {
+        //        Console.WriteLine("EXCEPTION AZ 'Radio_InterruptReceived'-ben!!!!");
+        //        Console.WriteLine(e.Message);
+        //        Console.WriteLine(e.StackTrace);
+        //    }
+        //}
+
+        unsafe void Read_Rx_Fifo(int p)
         {
             byte[] tempData = new byte[RadioConstants.FIX_PACKET_LENGTH + 1];
             tempData[0] = RadioConstants.CMD_RX_FIFO_READ;
@@ -247,10 +278,10 @@ namespace iContrAll.SPIRadio
 
             }
 
-            byte[] readMessage = new byte[RadioConstants.FIX_PACKET_LENGTH];
+            //byte[] readMessage = new byte[RadioConstants.FIX_PACKET_LENGTH];
             for (int i = 0; i < RadioConstants.FIX_PACKET_LENGTH; i++)
             {
-                readMessage[i] = tempData[i + 1];
+                data[i] = tempData[i + 1];
             }
 
             CTS();
@@ -267,7 +298,7 @@ namespace iContrAll.SPIRadio
             CTS();
             // Console.WriteLine("Read_Rx_Fifo: CTS()");
 
-            return readMessage;
+            //return readMessage;
         }
 
         unsafe void Clear_Int_Flags(int p)
@@ -364,7 +395,7 @@ namespace iContrAll.SPIRadio
         {
             state = RadioState.Send; 
             // Console.WriteLine("TX_Command: state changed to: " + state);
-            //GPIO.digitalWrite(RadioConstants.TXRX, 1); 
+            GPIO.digitalWrite(RadioConstants.TXRX, 1); 
             // Console.WriteLine("TX_Command: txrx = > 1");
             byte[] d = new byte[] { RadioConstants.CMD_START_TX, 0, 0, 0, RadioConstants.FIX_PACKET_LENGTH, 0 };
             fixed (byte* pD = d)
