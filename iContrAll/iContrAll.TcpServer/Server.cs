@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Linq;
 using System.Text;
+using System.Collections.Generic;
 
 
 namespace iContrAll.TcpServer
@@ -14,6 +15,7 @@ namespace iContrAll.TcpServer
 		private TcpListener tcpListener;
 		private Thread listenThread;
 		private int port;
+        private List<ServiceHandler> clientList = new List<ServiceHandler>();
 
 		public Server(int port)
 		{
@@ -21,53 +23,94 @@ namespace iContrAll.TcpServer
 
 			this.port = port;
 			this.tcpListener = new TcpListener(IPAddress.Any, this.port);
-
+            
 			this.listenThread = new Thread(new ThreadStart(ListenForClients));
 			this.listenThread.Start();
 		}
 
-		private void ProcessReceivedRadioMessage(RadioMessageEventArgs e)
-		{
-			if (e.ErrorCode == -1)
-			{
-				Console.WriteLine("Radio '-1' error code-dal jött vissza, EXCEPTION az INTERRUPT-BAN!");
-				// this.initRadio();
-				return;
-			}
-			
-			if (e.ReceivedBytes == null)
-				return;
+        private void ProcessReceivedRadioMessage(RadioMessageEventArgs e)
+        {
+            if (e.ErrorCode == -1)
+            {
+                Console.WriteLine("Radio '-1' error code-dal jött vissza, EXCEPTION az INTERRUPT-BAN!");
+                // this.initRadio();
+                return;
+            }
 
-			Console.WriteLine("Esemény:" + e.ReceivedBytes);
+            if (e.ReceivedBytes == null)
+                return;
+
+            Console.WriteLine("Esemény:" + e.ReceivedBytes + " hossz=" + e.ReceivedBytes.Length);
 
 
-			string senderId = Encoding.UTF8.GetString(e.ReceivedBytes.Take(8).ToArray());
-			string targetId = Encoding.UTF8.GetString(e.ReceivedBytes.Skip(8).Take(8).ToArray());
+            string senderId = Encoding.UTF8.GetString(e.ReceivedBytes.Take(8).ToArray());
+            string targetId = Encoding.UTF8.GetString(e.ReceivedBytes.Skip(8).Take(8).ToArray());
+            Console.WriteLine(senderId + "=>" + targetId);
+            // ha nem mihozzánk érkezik az üzenet, eldobjuk
+            if (targetId != System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2)) return;
 
-			// ha nem mihozzánk érkezik az üzenet, eldobjuk
-			if (targetId != System.Configuration.ConfigurationManager.AppSettings["loginid"]) return;
+            // debughoz
+            foreach (var b in e.ReceivedBytes)
+            {
+                Console.Write(b);
+            }
+            Console.WriteLine();
 
-			// 4 csatornás lámpavezérlőre felkészítve
-			if (senderId.StartsWith("LC1"))
-			{
-				int chCount = 2;
 
-				string channels = Encoding.UTF8.GetString(e.ReceivedBytes.Skip(11).Take(chCount).ToArray());
-				byte[] powerValues = e.ReceivedBytes.Skip(11 + chCount).Take(chCount).ToArray();
-				byte[] dimValues = e.ReceivedBytes.Skip(11 + 2* chCount).Take(chCount).ToArray();
+            // 2 csatornás lámpavezérlőre felkészítve
+            if (senderId.StartsWith("LC1"))
+            {
+                int chCount = 4;
 
-				using (var dal = new DataAccesLayer())
-				{
-					// TODO: minden tulajdonságot felvenni.
-					for (int i = 0; i < chCount; i++)
-			{
-						dal.UpdateDeviceStatus(senderId, i+1, channels[i].Equals('1'), powerValues[i], dimValues[i]);
-			}
-					
-					
-				}
-		}
-		}
+                string states = Encoding.UTF8.GetString(e.ReceivedBytes.Skip(19).Take(chCount).ToArray());
+
+                Console.WriteLine(senderId + "=>" + targetId + ":" + states);
+
+                byte[] powerValues = e.ReceivedBytes.Skip(19 + chCount).Take(chCount).ToArray();
+                byte[] dimValues = e.ReceivedBytes.Skip(19 + 2 * chCount).Take(chCount).ToArray();
+
+                using (var dal = new DataAccesLayer())
+                {
+                    for (int i = 0; i < chCount; i++)
+                    {
+                        dal.UpdateDeviceStatus(senderId, i + 1, states[i].Equals('1'), dimValues[i], powerValues[i]);
+                    }
+                }
+
+                for (int i = 0; i < chCount; i++)
+                {
+                    string stateMsg = senderId + targetId + "67" + "ch" + (i + 1) + "=";
+                    stateMsg += states[i].Equals('1') ? '1' : '0';
+
+                    SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(stateMsg)));
+
+                    string dimMsg = senderId + targetId + "67" + "chd" + (i + 1) + "=";
+                    dimMsg += dimValues[i];
+
+                    SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg)));
+                }
+            }
+            else Console.WriteLine("Nemjött be!");
+        }
+
+        private byte[] BuildMessage(int msgNumber, byte[] message)
+        {
+            byte[] msgNbrArray = new byte[4];
+            Array.Copy(BitConverter.GetBytes(msgNumber), msgNbrArray, msgNbrArray.Length);
+
+            byte[] lengthArray = new byte[4];
+            Array.Copy(BitConverter.GetBytes(message.Length), lengthArray, lengthArray.Length);
+
+            byte[] answer = new byte[4 + 4 + message.Length];
+
+            System.Buffer.BlockCopy(msgNbrArray, 0, answer, 0, msgNbrArray.Length);
+            System.Buffer.BlockCopy(lengthArray, 0, answer, msgNbrArray.Length, lengthArray.Length);
+            System.Buffer.BlockCopy(message, 0, answer, msgNbrArray.Length + lengthArray.Length, message.Length);
+
+            return answer;
+        }
+
+        private object clientListSyncObject = new object();
 
 		private void ListenForClients()
 		{
@@ -81,8 +124,37 @@ namespace iContrAll.TcpServer
 				Console.WriteLine("Client connected: {0}", client.Client.RemoteEndPoint);
 
 				// TODO: start() a servicehandlernek
-				new ServiceHandler(client);
+                lock (clientListSyncObject)
+                {
+                    ServiceHandler sh = new ServiceHandler(client);
+                    sh.RemoveClient += RemoveAClient;
+                    clientList.Add(new ServiceHandler(client));
+                }
 			}
 		}
+
+        void RemoveAClient(EndPoint ep)
+        {
+            lock (clientListSyncObject)
+            {
+                ServiceHandler user = clientList.First(u => u.Endpoint == ep);
+                if (user != null)
+                    clientList.Remove(user);
+            }
+        }
+
+        public void SendToAllClient(byte[] bytesToSend)
+        {
+            var asyncEvent = new SocketAsyncEventArgs();
+
+            asyncEvent.SetBuffer(bytesToSend, 0, bytesToSend.Length);
+            lock (clientListSyncObject)
+            {
+                foreach (var c in clientList)
+                {
+                    c.SendRadioMessage(asyncEvent);
+                }
+            }
+        }
 	}
 }

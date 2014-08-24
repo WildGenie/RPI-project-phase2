@@ -24,6 +24,9 @@ namespace iContrAll.TcpServer
 		
 		public EndPoint Endpoint { get { return tcpClient.Client.RemoteEndPoint; } }
 
+        public delegate void RemoveClientEH(EndPoint ep);
+        public event RemoveClientEH RemoveClient;
+
 		public ServiceHandler(TcpClient client)
 		{
 			this.tcpClient = client;
@@ -98,10 +101,42 @@ namespace iContrAll.TcpServer
 
 				tcpClient.Close();
                 Console.WriteLine("TcpClient zár");
+
+                if (this.RemoveClient!=null)
+                {
+                    RemoveClient(Endpoint);
+                }
 			}
 		}
 
-		
+        // Send the message.
+        public void SendRadioMessage(SocketAsyncEventArgs asyncEvent)
+        {
+            //string message = msg;
+            try
+            {
+                asyncEvent.Completed += OnMessageSendCompleted;
+                tcpClient.Client.SendAsync(asyncEvent);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine(tcpClient.Client.RemoteEndPoint.ToString() + " is disconnected.");
+                if (RemoveClient != null)
+                    RemoveClient(tcpClient.Client.RemoteEndPoint);
+            }
+        }
+
+        void OnMessageSendCompleted(object sender, SocketAsyncEventArgs e)
+        {
+            if (e.SocketError != SocketError.Success)
+            {
+                Console.WriteLine(tcpClient.Client.RemoteEndPoint.ToString() + " is disconnected.");
+                if (RemoveClient != null)
+                    RemoveClient(tcpClient.Client.RemoteEndPoint);
+
+            }
+
+        }
 
 		//byte[] trailingBuffer;
 		private List<Message> ProcessBuffer(byte[] readBuffer)
@@ -250,6 +285,9 @@ namespace iContrAll.TcpServer
 				case (byte)MessageType.RadioMsg:
 					SendCommandOnRadio(message);
 					break;
+                case (byte)MessageType.QueryMessageHistory:
+                    ResponseMessageHistory(message);
+                    break;
 				default:
 					break;
 			}
@@ -260,7 +298,30 @@ namespace iContrAll.TcpServer
             return null;
 		}
 
-        
+        private void ResponseMessageHistory(string message)
+        {
+            using (var dal = new DataAccesLayer())
+            {
+                var statuses = dal.GetDeviceStatus(message);
+
+                if (message.StartsWith("LC1"))
+                {
+                    foreach (var s in statuses)
+                    {
+                        string stateMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "67" + "ch" + s.DeviceChannel + "=" + (s.State ? '1' : '0');
+
+                        byte[] bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(stateMsg));
+
+                        tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
+                        
+                        string dimMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "67" + "chd" + s.DeviceChannel + "=" + s.Value;
+                        bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg));
+
+                        tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
+                    }
+                }
+            }
+        }
 
 		private void SendCommandOnRadio(string message)
 		{
