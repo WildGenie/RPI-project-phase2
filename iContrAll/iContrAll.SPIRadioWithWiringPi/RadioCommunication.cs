@@ -59,8 +59,7 @@ namespace iContrAll.SPIRadio
         public delegate void RadioMessageReceivedDelegate(RadioMessageEventArgs e);
         public event RadioMessageReceivedDelegate RadioMessageReveived;
 
-        public delegate void InterruptReceivedDeleagete();
-        public event InterruptReceivedDeleagete InterruptReceived;
+        
 
         private bool InitRadio()
         {
