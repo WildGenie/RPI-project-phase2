@@ -49,7 +49,7 @@ namespace iContrAll.SPIRadio
         #endregion
 
         public RadioState state;
-        public byte[] data = new byte[RadioConstants.FIX_PACKET_LENGTH];
+        //public byte[] data = new byte[RadioConstants.FIX_PACKET_LENGTH];
 
         public delegate void RadioMessageReceivedDelegate(RadioMessageEventArgs e);
         public event RadioMessageReceivedDelegate RadioMessageReveived;
@@ -114,23 +114,23 @@ namespace iContrAll.SPIRadio
         {
             try
             {
-                data = new byte[RadioConstants.FIX_PACKET_LENGTH];
+                byte[] bytesToSend = new byte[RadioConstants.FIX_PACKET_LENGTH];
 
-                Array.Copy(message, 0, data, 0, message.Length);
+                Array.Copy(message, 0, bytesToSend, 0, message.Length);
                 if (message.Length > 62) return false;
 
                 // maradék 0
                 for (int i = message.Length; i < 62; i++)
                 {
-                    data[i] = 0x08;
+                    bytesToSend[i] = 0x08;
                 }
                 // kocsi vissza
-                data[62] = 10;
-                data[63] = 13;
+                bytesToSend[62] = 10;
+                bytesToSend[63] = 13;
 
                 // Console.WriteLine("this.ToString() a data összerakás után" + this.ToString());
                 // írás
-                Write_Tx_Fifo(RadioConstants.P, data);
+                Write_Tx_Fifo(RadioConstants.P, bytesToSend);
                 // Console.WriteLine("this.ToString() a write tx fifo után" + this.ToString());
                 Clear_Int_Flags(RadioConstants.P);
                 // Console.WriteLine("this.ToString() a clear int flags után" + this.ToString());
@@ -185,12 +185,11 @@ namespace iContrAll.SPIRadio
                 if (state == RadioState.Receive)
                 {
                     Console.WriteLine("packet received");
-                    Read_Rx_Fifo(RadioConstants.P, data);
+                    byte[] receivedMessage = Read_Rx_Fifo(RadioConstants.P);
                     Clear_Int_Flags(RadioConstants.P);
                     RX_Command(RadioConstants.P);
-                    byte[] receivedMessage = this.data;
-                    string s = Encoding.UTF8.GetString(data);
-                    // Console.WriteLine("Interrupt, message received: " + s);
+                    string s = Encoding.UTF8.GetString(receivedMessage);
+                    Console.WriteLine("Interrupt, message received: " + s);
                     if (RadioMessageReveived != null)
                     {
                         RadioMessageReveived(new RadioMessageEventArgs(receivedMessage, 0));
@@ -220,7 +219,7 @@ namespace iContrAll.SPIRadio
             }
         }
 
-        unsafe void Read_Rx_Fifo(int p, byte[] x)
+        unsafe byte[] Read_Rx_Fifo(int p)
         {
             byte[] tempData = new byte[RadioConstants.FIX_PACKET_LENGTH + 1];
             tempData[0] = RadioConstants.CMD_RX_FIFO_READ;
@@ -238,10 +237,10 @@ namespace iContrAll.SPIRadio
 
             }
 
-
+            byte[] readMessage = new byte[RadioConstants.FIX_PACKET_LENGTH];
             for (int i = 0; i < RadioConstants.FIX_PACKET_LENGTH; i++)
             {
-                x[i] = tempData[i + 1];
+                readMessage[i] = tempData[i + 1];
             }
 
             CTS();
@@ -257,6 +256,8 @@ namespace iContrAll.SPIRadio
 
             CTS();
             // Console.WriteLine("Read_Rx_Fifo: CTS()");
+
+            return readMessage;
         }
 
         unsafe void Clear_Int_Flags(int p)
