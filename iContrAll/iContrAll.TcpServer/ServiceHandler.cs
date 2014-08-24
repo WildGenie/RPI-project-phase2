@@ -50,8 +50,12 @@ namespace iContrAll.TcpServer
 					{
 						try
 						{
+                            Console.WriteLine("Radio osztaly letezik olvasas elott??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
+                            Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 							numberOfBytesRead = clientStream.Read(readBuffer, 0, bufferSize);
 							// Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);
+                            Console.WriteLine("Radio osztaly letezik olvasas utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
+                            Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 						}
 						catch(ArgumentOutOfRangeException)
 						{
@@ -72,6 +76,8 @@ namespace iContrAll.TcpServer
 						foreach (var message in ProcessBuffer(readBytes))
 						{
 							var result = ProcessMessage(message);
+                            Console.WriteLine("Radio osztaly letezik ProcessMessage utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
+                            Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 							if (result == null || result.Length <= 0) continue;
 							// else reply!
 
@@ -81,6 +87,8 @@ namespace iContrAll.TcpServer
 							// Jójez, ez a cél, hogy ne várjuk meg a választ, gyorsabb legyen, bár nem számít nagyon.
 							clientStream.Write(result, 0, result.Length);
 						}
+                        Console.WriteLine("Radio osztaly letezik ProcessMessage foreach utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
+                        Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 					}
 				}
 			}
@@ -245,8 +253,11 @@ namespace iContrAll.TcpServer
 				default:
 					break;
 			}
-
-			return null;
+            
+            Console.WriteLine("Radio osztaly letezik a switchcase-ek után?? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
+            Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
+			
+            return null;
 		}
 
         
@@ -289,28 +300,37 @@ namespace iContrAll.TcpServer
 						else channelControl += 'x';
 					}
 
-                    byte[] retBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + channelControl + "xxxx" + "xxxx");
+                    byte[] dimValues = new byte[4] { 0, 0, 0, 0 };
+                    // TODO: lekérni rendes dimvalue-kat
+                    dimValues[channelId - 1] = 100;
 
-                    Radio.Instance.SendMessage(retBytes);
+                    // byte[] retBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + channelControl + "xxxx" + "xxxx");
+                    byte[] basicBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + channelControl + "xxxx");
+                    byte[] retBytes = new byte[basicBytes.Length + 4];
+
+                    Array.Copy(basicBytes, retBytes, basicBytes.Length);
+                    Array.Copy(dimValues, 0, retBytes, basicBytes.Length, 4);
                     
-                    return;
+                    //byte[] retBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + channelControl + "xxxx");
+                    Radio.Instance.SendMessage(retBytes);
 				}
-                
+                else
                 if (eqPos == 4)
                 {
                     if (command[2] == 'd')
                     {
-                       
                         int.TryParse(command[3].ToString(), out channelId);
                          #region normal mukodes
                         string dim = command.Substring(eqPos + 1);
-
-                        int iOfPoint = command.IndexOf('.');
+                        
+                        int iOfPoint = dim.IndexOf('.');
 
                         int dimValue;
 
                         int.TryParse(dim.Substring(0,iOfPoint), out dimValue);
-                        
+
+                        Console.WriteLine("DIM üzenet: " + dim + "("+dim.Substring(0,iOfPoint)+")"+ "=> " + dimValue + " on channel " + channelId);
+
                         byte[] dimValues = new byte[4];
                         for (int i = 1; i <= 4; i++)
                         {
@@ -318,20 +338,35 @@ namespace iContrAll.TcpServer
                             {
                                 dimValues[i-1] = (byte)dimValue;
                             }
-                            else dimValues[i-1] = 255;
+                            else dimValues[i-1] = 0;
                         }
 
-
                         //string dimString = Encoding.UTF8.GetString(dimValues);
+                        string basicString = senderIdInMsg + targetIdInMsg + "01" + "x";
 
-                        byte[] basicBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + "xxxx" + "xxxx");
+                        for (int i = 0; i < 4; i++)
+                        {
+                            if (dimValues[i] > 0)
+                                basicString += 1;
+                            else basicString+= "x";
+                        }
+
+                        basicString += "xxxx";
+                        
+                        byte[] basicBytes = Encoding.UTF8.GetBytes(basicString);
+
                         byte[] retBytes = new byte[basicBytes.Length + 4];
 
                         Array.Copy(basicBytes, retBytes, basicBytes.Length);
                         Array.Copy(dimValues, 0, retBytes, basicBytes.Length, 4);
-                        Radio.Instance.SendMessage(retBytes);
 
-                        return;
+                        for (int i = 0; i < retBytes.Length; i++)
+                        {
+                            Console.Write(retBytes[i]);
+                        }
+                        Console.WriteLine();
+
+                        Radio.Instance.SendMessage(retBytes);
 
                         #endregion
 
@@ -368,9 +403,9 @@ namespace iContrAll.TcpServer
                     }
                 }
 
-                return;
+                
 			}
-
+            else
             if (targetIdInMsg.StartsWith("OC1"))
             {
                 int eqPos = command.IndexOf('=');
@@ -403,9 +438,8 @@ namespace iContrAll.TcpServer
 
                     Radio.Instance.SendMessage(retArray);
 
-                    return;
                 }
-
+                else
                 if (eqPos == 6)
                 {
                     string value = command[7].ToString();
@@ -429,9 +463,8 @@ namespace iContrAll.TcpServer
 
                     Radio.Instance.SendMessage(retArray);
 
-                    return;
                 }
-
+                else
                 if (eqPos == 8)
                 {
                     string s = command.Substring(9);
@@ -451,13 +484,14 @@ namespace iContrAll.TcpServer
 
                         Radio.Instance.SendMessage(retArray);
                     }
-                    return;
+                    
                 }
 
 
             }
 
-            //Radio.Instance.SendMessage(senderId, )
+            Console.WriteLine("Radio osztaly letezik SendMessage után??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
+            Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 		}
 
 		private byte[] BuildMessage(int msgNumber, byte[] message)
@@ -694,6 +728,7 @@ namespace iContrAll.TcpServer
 
 		private void DelDevice(string message)
 		{
+            XElement element = XElement.Parse(message);
 			XmlDocument doc = new XmlDocument();
 			doc.LoadXml(message);
 
