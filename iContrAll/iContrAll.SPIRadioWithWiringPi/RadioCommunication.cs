@@ -170,9 +170,11 @@ namespace iContrAll.SPIRadio
 
         unsafe void Interrupt0()
         {
+            Console.WriteLine("interrup ugras eleje ok");
+            
             try
             {
-                Console.WriteLine("interrup ugras eleje ok");
+                //Console.WriteLine("interrup ugras eleje ok");
                 if (this == null)
                 {
                     //Console.WriteLine("tényleg szopó van");
@@ -201,7 +203,7 @@ namespace iContrAll.SPIRadio
                 if (state == RadioState.Send)
                 {
                     Console.WriteLine("packet sent");
-                    GPIO.digitalWrite(RadioConstants.TXRX, 0);
+                    //GPIO.digitalWrite(RadioConstants.TXRX, 0);
                     Clear_Int_Flags(RadioConstants.P);
                     RX_Command(RadioConstants.P);
                 }
@@ -217,6 +219,7 @@ namespace iContrAll.SPIRadio
                     RadioMessageReveived(new RadioMessageEventArgs(null, -1));
                 }
             }
+                 
         }
 
         unsafe byte[] Read_Rx_Fifo(int p)
@@ -354,7 +357,7 @@ namespace iContrAll.SPIRadio
         {
             state = RadioState.Send; 
             // Console.WriteLine("TX_Command: state changed to: " + state);
-            GPIO.digitalWrite(RadioConstants.TXRX, 1); 
+            //GPIO.digitalWrite(RadioConstants.TXRX, 1); 
             // Console.WriteLine("TX_Command: txrx = > 1");
             byte[] d = new byte[] { RadioConstants.CMD_START_TX, 0, 0, 0, RadioConstants.FIX_PACKET_LENGTH, 0 };
             fixed (byte* pD = d)
