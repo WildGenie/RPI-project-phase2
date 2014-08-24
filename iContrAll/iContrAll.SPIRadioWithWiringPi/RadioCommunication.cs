@@ -88,13 +88,13 @@ namespace iContrAll.SPIRadio
                     return false;
                 }
 
-                Console.WriteLine("Interrupt pin setup ok");
+                // Console.WriteLine("Interrupt pin setup ok");
 
                 power_up();
-                Console.WriteLine("power up");
+                // Console.WriteLine("power up");
 
                 config_rf_chip(RadioConstants.P);
-                Console.WriteLine("config rf chip");
+                //Console.WriteLine("config rf chip");
 
                 Clear_Int_Flags(RadioConstants.P);
                 RX_Command(RadioConstants.P);
@@ -128,14 +128,14 @@ namespace iContrAll.SPIRadio
                 data[62] = 10;
                 data[63] = 13;
 
-                Console.WriteLine("this.ToString() a data összerakás után" + this.ToString());
+                // Console.WriteLine("this.ToString() a data összerakás után" + this.ToString());
                 // írás
                 Write_Tx_Fifo(RadioConstants.P, data);
-                Console.WriteLine("this.ToString() a write tx fifo után" + this.ToString());
+                // Console.WriteLine("this.ToString() a write tx fifo után" + this.ToString());
                 Clear_Int_Flags(RadioConstants.P);
-                Console.WriteLine("this.ToString() a clear int flags után" + this.ToString());
+                // Console.WriteLine("this.ToString() a clear int flags után" + this.ToString());
                 TX_Command(RadioConstants.P);
-                Console.WriteLine("this.ToString() a txcommand után" + this.ToString());
+                // Console.WriteLine("this.ToString() a txcommand után" + this.ToString());
                 
 
                 // Thread.Sleep(RadioConstants.DD);
@@ -175,10 +175,10 @@ namespace iContrAll.SPIRadio
                 {
                     Console.WriteLine("tényleg szopó van");
                 }
-                Console.WriteLine("this.ToString()" + this.ToString());
+                // Console.WriteLine("this.ToString()" + this.ToString());
                 
-                Console.WriteLine("data: "+ Encoding.UTF8.GetString(this.data));
-                Console.WriteLine("state: " + state);
+                // Console.WriteLine("data: "+ Encoding.UTF8.GetString(this.data));
+                // Console.WriteLine("state: " + state);
 
                 if (state == RadioState.Receive)
                 {
@@ -188,7 +188,7 @@ namespace iContrAll.SPIRadio
                     RX_Command(RadioConstants.P);
                     byte[] receivedMessage = this.data;
                     string s = Encoding.UTF8.GetString(data);
-                    Console.WriteLine("Interrupt, message received: " + s);
+                    // Console.WriteLine("Interrupt, message received: " + s);
                     if (RadioMessageReveived != null)
                     {
                         RadioMessageReveived(new RadioMessageEventArgs(receivedMessage, 0));
@@ -232,7 +232,7 @@ namespace iContrAll.SPIRadio
             fixed (byte* pData = tempData)
             {
                 SPI.wiringPiSPIDataRW(p, pData, RadioConstants.FIX_PACKET_LENGTH + 1);
-                Console.WriteLine("Read_Rx_Fifo: wiringPiSPIDataRW " + Encoding.UTF8.GetString(tempData));
+                //Console.WriteLine("Read_Rx_Fifo: wiringPiSPIDataRW " + Encoding.UTF8.GetString(tempData));
 
             }
 
@@ -243,18 +243,18 @@ namespace iContrAll.SPIRadio
             }
 
             CTS();
-            Console.WriteLine("Read_Rx_Fifo: CTS()");
+            //Console.WriteLine("Read_Rx_Fifo: CTS()");
             byte[] t = new byte[] { 0x15, 0x03 };
 
 
             fixed (byte* pT = t)
             {
                 SPI.wiringPiSPIDataRW(p, pT, 2);
-                Console.WriteLine("Read_Rx_Fifo: wiringPiSPIDataRW " + Encoding.UTF8.GetString(t));
+              //  Console.WriteLine("Read_Rx_Fifo: wiringPiSPIDataRW " + Encoding.UTF8.GetString(t));
             }
 
             CTS();
-            Console.WriteLine("Read_Rx_Fifo: CTS()");
+            // Console.WriteLine("Read_Rx_Fifo: CTS()");
         }
 
         unsafe void Clear_Int_Flags(int p)
@@ -263,10 +263,10 @@ namespace iContrAll.SPIRadio
             fixed (byte* pA = a)
             {
                 SPI.wiringPiSPIDataRW(p, pA, a.Length);
-                Console.WriteLine("Clear_Int_Flags: wiringPiSPIDataRW " + Encoding.UTF8.GetString(a));
+               // Console.WriteLine("Clear_Int_Flags: wiringPiSPIDataRW " + Encoding.UTF8.GetString(a));
             }
             CTS();
-            Console.WriteLine("Clear_Int_Flags: CTS()");
+            // Console.WriteLine("Clear_Int_Flags: CTS()");
         }
 
         unsafe void RX_Command(int p)
@@ -276,10 +276,10 @@ namespace iContrAll.SPIRadio
             fixed (byte* pD = d)
             {
                 SPI.wiringPiSPIDataRW(p, pD, d.Length);
-                Console.WriteLine("RX_Command: wiringPiSPIDataRW " + Encoding.UTF8.GetString(d));
+                // Console.WriteLine("RX_Command: wiringPiSPIDataRW " + Encoding.UTF8.GetString(d));
             }
             CTS();
-            Console.WriteLine("RX_Command: CTS()");
+            // Console.WriteLine("RX_Command: CTS()");
         }
 
         unsafe void power_up()
@@ -340,24 +340,26 @@ namespace iContrAll.SPIRadio
             fixed (byte* pData = tempData)
             {
                 SPI.wiringPiSPIDataRW(p, pData, RadioConstants.FIX_PACKET_LENGTH + 1);
-                Console.WriteLine("Write_Tx_Fifo: wiringPiSPIDataRW " + Encoding.UTF8.GetString(tempData));
+               // Console.WriteLine("Write_Tx_Fifo: wiringPiSPIDataRW " + Encoding.UTF8.GetString(tempData));
             }
             CTS();
-            Console.WriteLine("Write_Tx_Fifo: CTS()");
+            // Console.WriteLine("Write_Tx_Fifo: CTS()");
         }
 
         unsafe void TX_Command(int p)
         {
-            state = RadioState.Send; Console.WriteLine("TX_Command: state changed to: " + state);
-            GPIO.digitalWrite(RadioConstants.TXRX, 1); Console.WriteLine("TX_Command: txrx = > 1");
+            state = RadioState.Send; 
+            // Console.WriteLine("TX_Command: state changed to: " + state);
+            GPIO.digitalWrite(RadioConstants.TXRX, 1); 
+            // Console.WriteLine("TX_Command: txrx = > 1");
             byte[] d = new byte[] { RadioConstants.CMD_START_TX, 0, 0, 0, RadioConstants.FIX_PACKET_LENGTH, 0 };
             fixed (byte* pD = d)
             {
                 SPI.wiringPiSPIDataRW(p, pD, d.Length);
-                Console.WriteLine("TX_Command: wiringPiSPIDataRW " + Encoding.UTF8.GetString(d));
+                // Console.WriteLine("TX_Command: wiringPiSPIDataRW " + Encoding.UTF8.GetString(d));
             }
             CTS();
-            Console.WriteLine("TX_Command: CTS()");
+            // Console.WriteLine("TX_Command: CTS()");
         }
     }
 }
