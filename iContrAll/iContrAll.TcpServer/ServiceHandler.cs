@@ -217,7 +217,7 @@ namespace iContrAll.TcpServer
 				if (completeBuffer.Length >= 8 + messageArray.Length) // CONTINUE,
 				{
 					byte[] tempBuf = new byte[completeBuffer.Length - (8 + messageArray.Length)];
-					Console.WriteLine(completeBuffer.Length + " - " + (8 + messageArray.Length) + " = tempBuf.Length: " + tempBuf.Length);
+					// Console.WriteLine(completeBuffer.Length + " - " + (8 + messageArray.Length) + " = tempBuf.Length: " + tempBuf.Length);
 					Array.Copy(completeBuffer, 8 + messageArray.Length, tempBuf, 0, completeBuffer.Length - (8 + messageArray.Length));
 					completeBuffer = tempBuf;
 				}
@@ -335,7 +335,7 @@ namespace iContrAll.TcpServer
 
             // string sendMessage = "00000112LC10000101xxxx1xxxxxxx";
 
-            Console.WriteLine("SendCommandOnRadio: " + message);
+            // Console.WriteLine("SendCommandOnRadio: " + message);
 
 			string senderId = System.Configuration.ConfigurationManager.AppSettings["loginid"];
 			string senderIdInMsg = message.Substring(0, 8);
@@ -385,7 +385,7 @@ namespace iContrAll.TcpServer
                     if (command[2] == 'd')
                     {
                         int.TryParse(command[3].ToString(), out channelId);
-                         #region normal mukodes
+                        #region normal mukodes
                         string dim = command.Substring(eqPos + 1);
                         
                         int iOfPoint = dim.IndexOf('.');

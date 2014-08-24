@@ -29,31 +29,32 @@ namespace iContrAll.TcpServer
 			this.listenThread.Start();
 		}
 
-        private void ProcessReceivedRadioMessage(RadioMessageEventArgs e)
+        //private void ProcessReceivedRadioMessage(RadioMessageEventArgs e)
+        private void ProcessReceivedRadioMessage(byte[] receivedBytes)
         {
-            if (e.ErrorCode == -1)
-            {
-                Console.WriteLine("Radio '-1' error code-dal jött vissza, EXCEPTION az INTERRUPT-BAN!");
-                // this.initRadio();
-                return;
-            }
+            //if (e.ErrorCode == -1)
+            //{
+            //    Console.WriteLine("Radio '-1' error code-dal jött vissza, EXCEPTION az INTERRUPT-BAN!");
+            //    // this.initRadio();
+            //    return;
+            //}
 
-            if (e.ReceivedBytes == null)
+            if (receivedBytes == null)
             {
                 Console.WriteLine("Esemény, de ReceivedBytes==null");
                 return;
             }
-            Console.WriteLine("Esemény:" + Encoding.UTF8.GetString(e.ReceivedBytes) + " hossz=" + e.ReceivedBytes.Length);
+            Console.WriteLine("Esemény:" + Encoding.UTF8.GetString(receivedBytes) + " hossz=" + receivedBytes.Length);
 
 
-            string senderId = Encoding.UTF8.GetString(e.ReceivedBytes.Take(8).ToArray());
-            string targetId = Encoding.UTF8.GetString(e.ReceivedBytes.Skip(8).Take(8).ToArray());
+            string senderId = Encoding.UTF8.GetString(receivedBytes.Take(8).ToArray());
+            string targetId = Encoding.UTF8.GetString(receivedBytes.Skip(8).Take(8).ToArray());
             Console.WriteLine(senderId + "=>" + targetId);
             // ha nem mihozzánk érkezik az üzenet, eldobjuk
             if (targetId != System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2)) return;
 
             // debughoz
-            foreach (var b in e.ReceivedBytes)
+            foreach (var b in receivedBytes)
             {
                 Console.Write(b+"|");
             }
@@ -63,14 +64,14 @@ namespace iContrAll.TcpServer
             // 2 csatornás lámpavezérlőre felkészítve
             if (senderId.StartsWith("LC1"))
             {
-                int chCount = 2;
+                int chCount = 4;
 
-                string states = Encoding.UTF8.GetString(e.ReceivedBytes.Skip(19).Take(chCount).ToArray());
+                string states = Encoding.UTF8.GetString(receivedBytes.Skip(19).Take(chCount).ToArray());
 
                 Console.WriteLine(senderId + "=>" + targetId + ":" + states);
 
-                byte[] powerValues = e.ReceivedBytes.Skip(19 + chCount).Take(chCount).ToArray();
-                byte[] dimValues = e.ReceivedBytes.Skip(19 + 2 * chCount).Take(chCount).ToArray();
+                byte[] powerValues = receivedBytes.Skip(19 + chCount).Take(chCount).ToArray();
+                byte[] dimValues = receivedBytes.Skip(19 + 2 * chCount).Take(chCount).ToArray();
 
                 using (var dal = new DataAccesLayer())
                 {
@@ -90,7 +91,7 @@ namespace iContrAll.TcpServer
                     string dimMsg = senderId + targetId + "60" + "chd" + (i + 1) + "=";
                     dimMsg += dimValues[i];
 
-                    Console.WriteLine("Response : " + dimMsg);
+                    Console.WriteLine("Broadcast : " + dimMsg);
                     SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg)));
                 }
             }
