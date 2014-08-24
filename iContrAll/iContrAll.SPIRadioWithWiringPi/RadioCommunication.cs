@@ -21,8 +21,7 @@ namespace iContrAll.SPIRadio
             Console.WriteLine("!!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!");
             state = RadioState.None;
             data = new byte[RadioConstants.FIX_PACKET_LENGTH];
-            Thread waitForInterruptThread = new Thread(WaitingForInterrupt);
-            waitForInterruptThread.Start();
+            
             if (InitRadio())
             {
                 Console.WriteLine("Radio init sikeres");
@@ -53,7 +52,7 @@ namespace iContrAll.SPIRadio
         private volatile RadioState state;
         //public byte[] data = new byte[RadioConstants.FIX_PACKET_LENGTH];
 
-        public delegate void RadioMessageReceivedDelegate(RadioMessageEventArgs e);
+        public delegate void RadioMessageReceivedDelegate(byte[] data);
         public event RadioMessageReceivedDelegate RadioMessageReveived;
 
         private unsafe bool InitRadio()
@@ -179,7 +178,10 @@ namespace iContrAll.SPIRadio
                 {
                     Console.WriteLine("packet received");
                     Read_Rx_Fifo(RadioConstants.P);
-                    interruptFlag = true;
+                    if (this.RadioMessageReveived!=null)
+                    {
+                        this.RadioMessageReveived(data);
+                    }
                     Clear_Int_Flags(RadioConstants.P);
                     RX_Command(RadioConstants.P);
                     
@@ -202,28 +204,6 @@ namespace iContrAll.SPIRadio
             }
             
                  
-        }
-
-        volatile bool interruptFlag = false;
-
-        public unsafe void WaitingForInterrupt()
-        {
-            while (true)
-            {
-                if (interruptFlag)
-                {
-                    interruptFlag = false;
-
-                    //string s = Encoding.UTF8.GetString(data);
-                    //Console.WriteLine("Interrupt, message received: " + s);
-                    if (RadioMessageReveived != null)
-                    {
-                        RadioMessageReveived(new RadioMessageEventArgs(data, 0));
-                    }
-                }
-                //Console.WriteLine("Worker thread: working...");
-            }
-            //Console.WriteLine("Worker thread: terminating gracefully.");
         }
 
         //void Radio_InterruptReceived()
