@@ -294,7 +294,7 @@ namespace iContrAll.TcpServer
                 using (MySqlCommand cmd = mysqlConn.CreateCommand())
                 {
                     cmd.CommandText = "SELECT * FROM DevicesInPlaces";
-                    cmd.ExecuteNonQuery();
+                    //cmd.ExecuteNonQuery(); // ????
 
                     List<DevicesInPlaces> devsInPlaces = new List<DevicesInPlaces>();
                     using (var reader = cmd.ExecuteReader())
@@ -345,9 +345,9 @@ namespace iContrAll.TcpServer
                     cmd.ExecuteNonQuery();
                 }
             } 
-            catch(Exception)
+            catch(MySqlException ex)
             {
-                Console.WriteLine("Mysql exception");
+                Console.WriteLine(ex.StackTrace);
             }
         }
 
@@ -519,17 +519,52 @@ namespace iContrAll.TcpServer
             }
         }
 
-        public void UpdateDeviceState(string deviceId)
+        public void UpdateDeviceStatus(string deviceId, int deviceChannel, bool state, int value, int power)
         {
-            //using (MySqlCommand cmd = mysqlConn.CreateCommand())
-            //{
-            //    // it's only pseudo code at the moment.
-            //    cmd.CommandText = "UPDATE Devices SET Status = @Status WHERE Id = @DeviceId";
-            //    cmd.Parameters.AddWithValue("@Status", null);
-            //    cmd.Parameters.AddWithValue("@DeviceId", deviceId);
+            using (MySqlCommand cmd = mysqlConn.CreateCommand())
+            {
+                cmd.CommandText = "INSERT INTO Statuses (DeviceId, DeviceChannel, State, Value, Power) " +
+                                  "VALUES (@DeviceId, @DeviceChannel, @State, @Value, @Power) " +
+                                  "ON DUPLICATE KEY UPDATE State = VALUES(State), Value = VALUES(Value), Power = VALUES(Power)";
+                
+                cmd.Parameters.AddWithValue("@DeviceId", deviceId);
+                cmd.Parameters.AddWithValue("@DeviceChannel", deviceChannel);
+                cmd.Parameters.AddWithValue("@State", state?1:0);
+                cmd.Parameters.AddWithValue("@Value", value);
+                cmd.Parameters.AddWithValue("@Power", power);
 
-            //    cmd.ExecuteNonQuery();
-            //}
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public IEnumerable<Status> GetDeviceStatus(string deviceId)
+        {
+            List<Status> statusList = new List<Status>();
+
+            using (MySqlCommand cmd = mysqlConn.CreateCommand())
+            {
+                cmd.CommandText = "SELECT * FROM Statuses WHERE DeviceId = @DeviceId";
+
+                cmd.Parameters.AddWithValue("@DeviceId", deviceId);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        statusList.Add(new Status
+                        {
+                            DeviceId = reader["DeviceId"].ToString(),
+                            DeviceChannel = int.Parse(reader["DeviceChannel"].ToString()),
+                            State = int.Parse(reader["State"].ToString()) == 1 ? true : false,
+                            Value = int.Parse(reader["Value"].ToString()),
+                            Power = int.Parse(reader["Power"].ToString())
+                        });
+                        
+                    }
+                }
+            }
+
+            return statusList;
         }
 
         #endregion

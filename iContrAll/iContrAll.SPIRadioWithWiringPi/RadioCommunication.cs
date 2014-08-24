@@ -48,8 +48,8 @@ namespace iContrAll.SPIRadio
         }
         #endregion
 
-        private RadioState state;
-        private byte[] data = new byte[RadioConstants.FIX_PACKET_LENGTH];
+        public RadioState state;
+        public byte[] data = new byte[RadioConstants.FIX_PACKET_LENGTH];
 
         public delegate void RadioMessageReceivedDelegate(RadioMessageEventArgs e);
         public event RadioMessageReceivedDelegate RadioMessageReveived;
@@ -176,6 +176,7 @@ namespace iContrAll.SPIRadio
                     Console.WriteLine("tényleg szopó van");
                 }
                 Console.WriteLine("this.ToString()" + this.ToString());
+                
                 Console.WriteLine("data: "+ Encoding.UTF8.GetString(this.data));
                 Console.WriteLine("state: " + state);
 
@@ -185,12 +186,12 @@ namespace iContrAll.SPIRadio
                     Read_Rx_Fifo(RadioConstants.P, data);
                     Clear_Int_Flags(RadioConstants.P);
                     RX_Command(RadioConstants.P);
-
+                    byte[] receivedMessage = this.data;
                     string s = Encoding.UTF8.GetString(data);
                     Console.WriteLine("Interrupt, message received: " + s);
                     if (RadioMessageReveived != null)
                     {
-                        RadioMessageReveived(new RadioMessageEventArgs(s, 0));
+                        RadioMessageReveived(new RadioMessageEventArgs(receivedMessage, 0));
                     }
 
                     //Console.WriteLine(s);
@@ -212,7 +213,7 @@ namespace iContrAll.SPIRadio
                 
                 if (RadioMessageReveived != null)
                 {
-                    RadioMessageReveived(new RadioMessageEventArgs(string.Empty, -1));
+                    RadioMessageReveived(new RadioMessageEventArgs(null, -1));
                 }
             }
         }
