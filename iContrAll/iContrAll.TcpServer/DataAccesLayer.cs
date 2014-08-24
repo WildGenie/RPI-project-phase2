@@ -91,7 +91,7 @@ namespace iContrAll.TcpServer
 
                             foreach (var device in deviceList)
                             {
-                                if (device.DeviceType == actionType.DeviceType)
+                                if (device.DeviceType.Equals(actionType.DeviceType))
                                 {
                                     device.Actions.Add(actionType);
                                 }
@@ -101,9 +101,9 @@ namespace iContrAll.TcpServer
                     }
                 }
             }
-            catch(Exception)
+            catch(Exception ex)
             {
-                Console.WriteLine("Mysql exception");
+                Console.WriteLine(ex.StackTrace);
             }
 
             return deviceList;
@@ -132,44 +132,62 @@ namespace iContrAll.TcpServer
                     }
                 }
 
+                if (!usableType) return;
+
                 using (MySqlCommand cmd = mysqlConn.CreateCommand())
                 {
-                    var count = GetDeviceList().Count(d => d.Id == id && d.Channel == channel);
-                    if (count > 0)
-                    {
-                        // UPDATE
-                        cmd.CommandText = "UPDATE Devices SET Name = @Name, Timer = @Timer, Voltage=@Voltage WHERE Id = @Id AND Channel = @Channel";
-                        cmd.Parameters.AddWithValue("@Id", id);
-                        cmd.Parameters.AddWithValue("@Channel", channel);
-                        cmd.Parameters.AddWithValue("@Name", name);
-                        cmd.Parameters.AddWithValue("@Timer", timer);
-                        cmd.Parameters.AddWithValue("@Voltage", voltage);
-                    }
-                    else
-                    {
-                        // INSERT
-                        cmd.CommandText = "INSERT INTO Devices(Id,Channel,Name,DeviceType) VALUES(@Id, @Channel, @Name, @DeviceType)";
-                        cmd.Parameters.AddWithValue("@Id", id);
-                        cmd.Parameters.AddWithValue("@Channel", channel);
-                        cmd.Parameters.AddWithValue("@Name", name);
-                        if (usableType)
-                            cmd.Parameters.AddWithValue("@DeviceType", id.Substring(0, 3));
-                        else cmd.Parameters.AddWithValue("@DeviceType", null);
-                        cmd.Parameters.AddWithValue("@Timer", timer);
-                        cmd.Parameters.AddWithValue("@Voltage", voltage);
-                    }
+                    cmd.CommandText = "INSERT INTO Devices (Id, Channel, Name, Timer, Voltage, DeviceType) " +
+                                      "VALUES (@Id, @Channel, @Name, @Timer, @Voltage, @DeviceType) " +
+                                      "ON DUPLICATE KEY UPDATE Name = VALUES(Name), Timer = VALUES(Timer), Voltage = VALUES(Voltage)";
+
+                    cmd.Parameters.AddWithValue("@Id", id);
+                    cmd.Parameters.AddWithValue("@Channel", channel);
+                    cmd.Parameters.AddWithValue("@Name", name);
+                    cmd.Parameters.AddWithValue("@Timer", timer);
+                    cmd.Parameters.AddWithValue("@Voltage", voltage);
+                    cmd.Parameters.AddWithValue("@DeviceType", id.Substring(0, 3));
+
+
+                    //var count = GetDeviceList().Count(d => d.Id == id && d.Channel == channel);
+                    //if (count > 0)
+                    //{
+                    //    // UPDATE
+                    //    cmd.CommandText = "UPDATE Devices SET Name = @Name, Timer = @Timer, Voltage=@Voltage WHERE Id = @Id AND Channel = @Channel";
+                    //    cmd.Parameters.AddWithValue("@Id", id);
+                    //    cmd.Parameters.AddWithValue("@Channel", channel);
+                    //    cmd.Parameters.AddWithValue("@Name", name);
+                    //    cmd.Parameters.AddWithValue("@Timer", timer);
+                    //    cmd.Parameters.AddWithValue("@Voltage", voltage);
+                    //}
+                    //else
+                    //{
+                    //    if (usableType)
+                    //    {
+                    //        // INSERT
+                    //        cmd.CommandText = "INSERT INTO Devices(Id,Channel,Name,DeviceType) VALUES(@Id, @Channel, @Name, @DeviceType)";
+                    //        cmd.Parameters.AddWithValue("@Id", id);
+                    //        cmd.Parameters.AddWithValue("@Channel", channel);
+                    //        cmd.Parameters.AddWithValue("@Name", name);
+                    //        if (usableType)
+                    //            cmd.Parameters.AddWithValue("@DeviceType", id.Substring(0, 3));
+                    //        else cmd.Parameters.AddWithValue("@DeviceType", null);
+                    //        cmd.Parameters.AddWithValue("@Timer", timer);
+                    //        cmd.Parameters.AddWithValue("@Voltage", voltage);
+                    //    }
+                    //}
 
                     cmd.ExecuteNonQuery();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("Mysql exception");
+                Console.WriteLine(ex.StackTrace);
             }
         }
 
         public void DelDevice(string id, int channel)
         {
+            Console.WriteLine("DELDEVICE: ID " + id + ": " + channel);
             try
             {
                 using (var cmd = mysqlConn.CreateCommand())
@@ -182,9 +200,11 @@ namespace iContrAll.TcpServer
                     cmd.ExecuteNonQuery();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("Mysql exception");
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.StackTrace);
+                Console.WriteLine(ex.InnerException);
             }
         }
 
@@ -231,9 +251,9 @@ namespace iContrAll.TcpServer
                 }
             }
 
-            catch (Exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("Mysql exception");
+                Console.WriteLine(ex.StackTrace);
             }
 
 
@@ -263,9 +283,9 @@ namespace iContrAll.TcpServer
                     cmd.ExecuteNonQuery();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("Mysql exception");
+                Console.WriteLine(ex.StackTrace);
             }
         }
 
@@ -281,9 +301,9 @@ namespace iContrAll.TcpServer
                     cmd.ExecuteNonQuery();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("Mysql exception");
+                Console.WriteLine(ex.StackTrace);
             }
         }
 
@@ -324,9 +344,9 @@ namespace iContrAll.TcpServer
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("Mysql exception");
+                Console.WriteLine(ex.StackTrace);
             }
         }
 
@@ -344,8 +364,8 @@ namespace iContrAll.TcpServer
 
                     cmd.ExecuteNonQuery();
                 }
-            } 
-            catch(MySqlException ex)
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.StackTrace);
             }
@@ -407,9 +427,9 @@ namespace iContrAll.TcpServer
 
                 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("Mysql exception");
+                Console.WriteLine(ex.StackTrace);
             }
             return returnList;
         }
@@ -437,9 +457,9 @@ namespace iContrAll.TcpServer
                     cmd.ExecuteNonQuery();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("Mysql exception");
+                Console.WriteLine(ex.StackTrace);
             }
         }
 
@@ -455,9 +475,9 @@ namespace iContrAll.TcpServer
                     cmd.ExecuteNonQuery();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("Mysql exception");
+                Console.WriteLine(ex.StackTrace);
             }
         }
 
@@ -490,9 +510,9 @@ namespace iContrAll.TcpServer
 
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("AddActionToList Exception");
+                Console.WriteLine(ex.StackTrace);
             }
         }
 
@@ -513,9 +533,9 @@ namespace iContrAll.TcpServer
 
             }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("AddActionToList Exception");
+                Console.WriteLine(ex.StackTrace);
             }
         }
 
@@ -523,17 +543,34 @@ namespace iContrAll.TcpServer
         {
             using (MySqlCommand cmd = mysqlConn.CreateCommand())
             {
-                cmd.CommandText = "INSERT INTO Statuses (DeviceId, DeviceChannel, State, Value, Power) " +
-                                  "VALUES (@DeviceId, @DeviceChannel, @State, @Value, @Power) " +
-                                  "ON DUPLICATE KEY UPDATE State = VALUES(State), Value = VALUES(Value), Power = VALUES(Power)";
-                
+                cmd.CommandText = "SELECT * FROM Devices WHERE Id = @DeviceId AND Channel = @DeviceChannel";
                 cmd.Parameters.AddWithValue("@DeviceId", deviceId);
                 cmd.Parameters.AddWithValue("@DeviceChannel", deviceChannel);
-                cmd.Parameters.AddWithValue("@State", state?1:0);
-                cmd.Parameters.AddWithValue("@Value", value);
-                cmd.Parameters.AddWithValue("@Power", power);
+                bool exists = false;
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        exists = true;
+                    }
+                }
 
-                cmd.ExecuteNonQuery();
+                if (exists)
+                {
+                    cmd.Parameters.Clear();
+
+                    cmd.CommandText = "INSERT INTO Statuses (DeviceId, DeviceChannel, State, Value, Power) " +
+                                      "VALUES (@DeviceId, @DeviceChannel, @State, @Value, @Power) " +
+                                      "ON DUPLICATE KEY UPDATE State = VALUES(State), Value = VALUES(Value), Power = VALUES(Power)";
+
+                    cmd.Parameters.AddWithValue("@DeviceId", deviceId);
+                    cmd.Parameters.AddWithValue("@DeviceChannel", deviceChannel);
+                    cmd.Parameters.AddWithValue("@State", state ? 1 : 0);
+                    cmd.Parameters.AddWithValue("@Value", value);
+                    cmd.Parameters.AddWithValue("@Power", power);
+
+                    cmd.ExecuteNonQuery();
+                }
             }
         }
 

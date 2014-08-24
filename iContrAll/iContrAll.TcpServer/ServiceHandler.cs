@@ -21,8 +21,8 @@ namespace iContrAll.TcpServer
 		
 		private TcpClient tcpClient;
 		private ClientState clientState;
-		
-		public EndPoint Endpoint { get { return tcpClient.Client.RemoteEndPoint; } }
+
+        public EndPoint Endpoint { get; set; }
 
         public delegate void RemoveClientEH(EndPoint ep);
         public event RemoveClientEH RemoveClient;
@@ -30,6 +30,7 @@ namespace iContrAll.TcpServer
 		public ServiceHandler(TcpClient client)
 		{
 			this.tcpClient = client;
+            this.Endpoint = client.Client.RemoteEndPoint;
 			clientState = ClientState.LoginPhase;
 
 			Thread commThread = new Thread(HandleMessages);
@@ -53,12 +54,12 @@ namespace iContrAll.TcpServer
 					{
 						try
 						{
-                            Console.WriteLine("Radio osztaly letezik olvasas elott??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
-                            Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
+                            // Console.WriteLine("Radio osztaly letezik olvasas elott??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
+                            //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 							numberOfBytesRead = clientStream.Read(readBuffer, 0, bufferSize);
 							// Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);
-                            Console.WriteLine("Radio osztaly letezik olvasas utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
-                            Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
+                            //Console.WriteLine("Radio osztaly letezik olvasas utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
+                            //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 						}
 						catch(ArgumentOutOfRangeException)
 						{
@@ -79,8 +80,8 @@ namespace iContrAll.TcpServer
 						foreach (var message in ProcessBuffer(readBytes))
 						{
 							var result = ProcessMessage(message);
-                            Console.WriteLine("Radio osztaly letezik ProcessMessage utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
-                            Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
+                            //Console.WriteLine("Radio osztaly letezik ProcessMessage utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
+                            //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 							if (result == null || result.Length <= 0) continue;
 							// else reply!
 
@@ -90,8 +91,8 @@ namespace iContrAll.TcpServer
 							// Jójez, ez a cél, hogy ne várjuk meg a választ, gyorsabb legyen, bár nem számít nagyon.
 							clientStream.Write(result, 0, result.Length);
 						}
-                        Console.WriteLine("Radio osztaly letezik ProcessMessage foreach utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
-                        Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
+                        //Console.WriteLine("Radio osztaly letezik ProcessMessage foreach utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
+                        //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 					}
 				}
 			}
@@ -120,9 +121,9 @@ namespace iContrAll.TcpServer
             }
             catch (Exception)
             {
-                Console.WriteLine(tcpClient.Client.RemoteEndPoint.ToString() + " is disconnected.");
+                Console.WriteLine(Endpoint.ToString() + " is disconnected.");
                 if (RemoveClient != null)
-                    RemoveClient(tcpClient.Client.RemoteEndPoint);
+                    RemoveClient(Endpoint);
             }
         }
 
@@ -130,9 +131,9 @@ namespace iContrAll.TcpServer
         {
             if (e.SocketError != SocketError.Success)
             {
-                Console.WriteLine(tcpClient.Client.RemoteEndPoint.ToString() + " is disconnected.");
+                Console.WriteLine(Endpoint.ToString() + " is disconnected.");
                 if (RemoveClient != null)
-                    RemoveClient(tcpClient.Client.RemoteEndPoint);
+                    RemoveClient(Endpoint);
 
             }
 
@@ -292,8 +293,8 @@ namespace iContrAll.TcpServer
 					break;
 			}
             
-            Console.WriteLine("Radio osztaly letezik a switchcase-ek után?? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
-            Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
+            //Console.WriteLine("Radio osztaly letezik a switchcase-ek után?? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
+            //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 			
             return null;
 		}
@@ -303,21 +304,24 @@ namespace iContrAll.TcpServer
             using (var dal = new DataAccesLayer())
             {
                 var statuses = dal.GetDeviceStatus(message);
-
-                if (message.StartsWith("LC1"))
+                if (statuses.Count() > 0)
                 {
-                    foreach (var s in statuses)
+                    if (message.StartsWith("LC1"))
                     {
-                        string stateMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "67" + "ch" + s.DeviceChannel + "=" + (s.State ? '1' : '0');
+                        foreach (var s in statuses)
+                        {
+                            string stateMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chs" + s.DeviceChannel + "=" + (s.State ? '1' : '0');
+                            Console.WriteLine("Response sent: " + stateMsg);
+                            byte[] bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(stateMsg));
 
-                        byte[] bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(stateMsg));
+                            tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
 
-                        tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
-                        
-                        string dimMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "67" + "chd" + s.DeviceChannel + "=" + s.Value;
-                        bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg));
+                            string dimMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chd" + s.DeviceChannel + "=" + s.Value;
+                            Console.WriteLine("Response sent: " + dimMsg);
+                            bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg));
 
-                        tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
+                            tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
+                        }
                     }
                 }
             }
@@ -390,7 +394,7 @@ namespace iContrAll.TcpServer
 
                         int.TryParse(dim.Substring(0,iOfPoint), out dimValue);
 
-                        Console.WriteLine("DIM üzenet: " + dim + "("+dim.Substring(0,iOfPoint)+")"+ "=> " + dimValue + " on channel " + channelId);
+                        // Console.WriteLine("DIM üzenet: " + dim + "("+dim.Substring(0,iOfPoint)+")"+ "=> " + dimValue + " on channel " + channelId);
 
                         byte[] dimValues = new byte[4];
                         for (int i = 1; i <= 4; i++)
@@ -551,8 +555,8 @@ namespace iContrAll.TcpServer
 
             }
 
-            Console.WriteLine("Radio osztaly letezik SendMessage után??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
-            Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
+            //Console.WriteLine("Radio osztaly letezik SendMessage után??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
+            //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 		}
 
 		private byte[] BuildMessage(int msgNumber, byte[] message)
@@ -771,18 +775,14 @@ namespace iContrAll.TcpServer
 				elemTimer = elemList[0].InnerXml;
 			}
 
-			int elemVoltage = 0;
-			elemList = doc.GetElementsByTagName("voltage");
-			if (elemList.Count > 0)
-			{
-				int.TryParse(elemList[0].InnerXml, out elemVoltage);
-				
-
-			}
+            if (elemId.Length != 8) return;
+            if (elemChannel == 0) return;
+            if (string.IsNullOrEmpty(elemName)) return;
+            
 
 			using (var dal = new DataAccesLayer())
 			{
-				dal.AddDevice(elemId, elemChannel, elemName, elemTimer, elemVoltage);
+				dal.AddDevice(elemId, elemChannel, elemName, elemTimer, 0);
 			}
 
 		}
@@ -806,14 +806,6 @@ namespace iContrAll.TcpServer
 			if (elemList.Count > 0)
 			{
 				int.TryParse(elemList[0].InnerXml, out elemChannel);
-			}
-
-			elemList = doc.GetElementsByTagName("name");
-			string elemName = "";
-
-			if (elemList.Count > 0)
-			{
-				elemName = elemList[0].InnerXml;
 			}
 
 			using (var dal = new DataAccesLayer())

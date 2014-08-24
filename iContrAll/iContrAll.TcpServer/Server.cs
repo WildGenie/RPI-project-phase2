@@ -19,6 +19,7 @@ namespace iContrAll.TcpServer
 
 		public Server(int port)
 		{
+
 			Radio.Instance.RadioMessageReveived += ProcessReceivedRadioMessage;
 
 			this.port = port;
@@ -38,8 +39,10 @@ namespace iContrAll.TcpServer
             }
 
             if (e.ReceivedBytes == null)
+            {
+                Console.WriteLine("Esemény, de ReceivedBytes==null");
                 return;
-
+            }
             Console.WriteLine("Esemény:" + e.ReceivedBytes + " hossz=" + e.ReceivedBytes.Length);
 
 
@@ -52,7 +55,7 @@ namespace iContrAll.TcpServer
             // debughoz
             foreach (var b in e.ReceivedBytes)
             {
-                Console.Write(b);
+                Console.Write(b+"|");
             }
             Console.WriteLine();
 
@@ -60,7 +63,7 @@ namespace iContrAll.TcpServer
             // 2 csatornás lámpavezérlőre felkészítve
             if (senderId.StartsWith("LC1"))
             {
-                int chCount = 4;
+                int chCount = 2;
 
                 string states = Encoding.UTF8.GetString(e.ReceivedBytes.Skip(19).Take(chCount).ToArray());
 
@@ -79,14 +82,15 @@ namespace iContrAll.TcpServer
 
                 for (int i = 0; i < chCount; i++)
                 {
-                    string stateMsg = senderId + targetId + "67" + "ch" + (i + 1) + "=";
+                    string stateMsg = senderId + targetId+ "60" + "chs" + (i + 1) + "=";
                     stateMsg += states[i].Equals('1') ? '1' : '0';
-
+                    Console.WriteLine("Response : " + stateMsg);
                     SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(stateMsg)));
 
-                    string dimMsg = senderId + targetId + "67" + "chd" + (i + 1) + "=";
+                    string dimMsg = senderId + targetId + "60" + "chd" + (i + 1) + "=";
                     dimMsg += dimValues[i];
 
+                    Console.WriteLine("Response : " + dimMsg);
                     SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg)));
                 }
             }
@@ -114,23 +118,33 @@ namespace iContrAll.TcpServer
 
 		private void ListenForClients()
 		{
-			this.tcpListener.Start();
-			Console.WriteLine("Server is listening on port {0}...", this.tcpListener.LocalEndpoint);
+            try
+            {
+                this.tcpListener.Start();
+                Console.WriteLine("Server is listening on port {0}...", this.tcpListener.LocalEndpoint);
 
-			while (true)
-			{
-				//blocks until a client has connected to the server
-				TcpClient client = this.tcpListener.AcceptTcpClient();
-				Console.WriteLine("Client connected: {0}", client.Client.RemoteEndPoint);
-
-				// TODO: start() a servicehandlernek
-                lock (clientListSyncObject)
+                while (true)
                 {
+                    //blocks until a client has connected to the server
+                    TcpClient client = this.tcpListener.AcceptTcpClient();
+                    Console.WriteLine("Client connected: {0}", client.Client.RemoteEndPoint);
+
                     ServiceHandler sh = new ServiceHandler(client);
                     sh.RemoveClient += RemoveAClient;
-                    clientList.Add(new ServiceHandler(client));
+
+                    // TODO: start() a servicehandlernek
+                    lock (clientListSyncObject)
+                    {
+                        clientList.Add(sh);
+                    }
                 }
-			}
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in ListenForClients()");
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.StackTrace);
+            }
 		}
 
         void RemoveAClient(EndPoint ep)

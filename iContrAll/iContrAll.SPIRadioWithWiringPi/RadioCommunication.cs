@@ -88,13 +88,13 @@ namespace iContrAll.SPIRadio
                     return false;
                 }
 
-                // Console.WriteLine("Interrupt pin setup ok");
+                 Console.WriteLine("Interrupt pin setup ok");
 
                 power_up();
-                // Console.WriteLine("power up");
+                Console.WriteLine("power up");
 
                 config_rf_chip(RadioConstants.P);
-                //Console.WriteLine("config rf chip");
+                Console.WriteLine("config rf chip");
 
                 Clear_Int_Flags(RadioConstants.P);
                 RX_Command(RadioConstants.P);
@@ -161,8 +161,10 @@ namespace iContrAll.SPIRadio
                 fixed (byte* pX = x)
                 {
                     SPI.wiringPiSPIDataRW(0, pX, x.Length);
+
+                    a = pX[1];
+                    
                 }
-                a = x[1];
             }
         }
 
@@ -173,7 +175,7 @@ namespace iContrAll.SPIRadio
                 Console.WriteLine("interrup ugras eleje ok");
                 if (this == null)
                 {
-                    Console.WriteLine("tényleg szopó van");
+                    //Console.WriteLine("tényleg szopó van");
                 }
                 // Console.WriteLine("this.ToString()" + this.ToString());
                 
@@ -294,10 +296,11 @@ namespace iContrAll.SPIRadio
                 SPI.wiringPiSPIDataRW(RadioConstants.P, pPwr, 3);
             }
             CTS();
+                
             pwr[0] = RadioConstants.CMD_GET_INT_STATUS;
             fixed (byte* pPwr = pwr)
             {
-                SPI.wiringPiSPIDataRW(RadioConstants.P, pPwr, 3);
+                SPI.wiringPiSPIDataRW(RadioConstants.P, pPwr, 1);
             }
             CTS();
         }
