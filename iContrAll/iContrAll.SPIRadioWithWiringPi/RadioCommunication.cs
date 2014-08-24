@@ -20,7 +20,7 @@ namespace iContrAll.SPIRadio
         {
             Console.WriteLine("!!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!");
             state = RadioState.None;
-            
+            this.InterruptReceived += Radio_InterruptReceived;
             if (InitRadio())
             {
                 Console.WriteLine("Radio init sikeres");
@@ -29,6 +29,11 @@ namespace iContrAll.SPIRadio
             {
                 Console.WriteLine("Radio init NEM sikeres");
             }
+        }
+
+        void Radio_InterruptReceived()
+        {
+            
         }
 
         public static Radio Instance
@@ -53,6 +58,9 @@ namespace iContrAll.SPIRadio
 
         public delegate void RadioMessageReceivedDelegate(RadioMessageEventArgs e);
         public event RadioMessageReceivedDelegate RadioMessageReveived;
+
+        public delegate void InterruptReceivedDeleagete();
+        public event InterruptReceivedDeleagete InterruptReceived;
 
         private bool InitRadio()
         {
@@ -214,10 +222,10 @@ namespace iContrAll.SPIRadio
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
                 
-                if (RadioMessageReveived != null)
-                {
-                    RadioMessageReveived(new RadioMessageEventArgs(null, -1));
-                }
+                //if (RadioMessageReveived != null)
+                //{
+                //    RadioMessageReveived(new RadioMessageEventArgs(null, -1));
+                //}
             }
                  
         }
