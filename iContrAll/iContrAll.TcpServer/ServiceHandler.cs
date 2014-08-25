@@ -66,7 +66,10 @@ namespace iContrAll.TcpServer
 							Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
 							continue;
 						}
-
+                        catch(Exception e)
+                        {
+                            break;
+                        }
                         if (numberOfBytesRead <= 0)
                         {
                             Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, tcpClient.Client.RemoteEndPoint.ToString());
@@ -99,8 +102,8 @@ namespace iContrAll.TcpServer
 			finally
 			{
 				clientStream.Close();
-
 				tcpClient.Close();
+
                 Console.WriteLine("TcpClient zár");
 
                 if (this.RemoveClient!=null)
