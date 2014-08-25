@@ -36,4 +36,4 @@ Thumbs.db
 *.bsc
 obj/
 [Rr]elease*/
-
+!iContrAll.Executables/iContrAll.TcpServer.exe
