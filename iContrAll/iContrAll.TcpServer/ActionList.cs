@@ -33,11 +33,19 @@ namespace iContrAll.TcpServer
             set { deviceId = value; }
         }
 
-        private string actionTypeName;
-        public string ActionTypeName
+        private int deviceChannel;
+        public int DeviceChannel
         {
-            get { return actionTypeName; }
-            set { actionTypeName = value; }
+            get { return deviceChannel; }
+            set { deviceChannel = value; }
+        }
+
+
+        private int actionTypeId;
+        public int ActionTypeId
+        {
+            get { return actionTypeId; }
+            set { actionTypeId = value; }
         }
 
         private int order;
@@ -47,12 +55,12 @@ namespace iContrAll.TcpServer
             set { order = value; }
         }
 
-        private Guid actionListId;
-        public Guid ActionListId
-        {
-            get { return actionListId; }
-            set { actionListId = value; }
-        }
+        //private Guid actionListId;
+        //public Guid ActionListId
+        //{
+        //    get { return actionListId; }
+        //    set { actionListId = value; }
+        //}
 
 
     }

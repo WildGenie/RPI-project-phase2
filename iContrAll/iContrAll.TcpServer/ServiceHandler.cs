@@ -690,7 +690,7 @@ namespace iContrAll.TcpServer
 								foreach (var action in channel.Actions)
 								{
 									xw.WriteStartElement("action");
-									xw.WriteAttributeString("id", action.Id.ToString());
+                                    xw.WriteAttributeString("id", channel.Channel.ToString() + "_" + action.Id.ToString());
 									xw.WriteAttributeString("name", action.Name.ToString());
 									xw.WriteEndElement();
 								}
@@ -976,7 +976,7 @@ namespace iContrAll.TcpServer
 						{
 							xw.WriteStartElement("action");
 							xw.WriteAttributeString("order", action.Order.ToString());
-							xw.WriteAttributeString("actionid", action.ActionTypeName);
+							xw.WriteAttributeString("actionid", action.DeviceChannel+"_"+action.ActionTypeId);
 							xw.WriteAttributeString("to", action.DeviceId);
 							xw.WriteEndElement();
 						}
@@ -1059,20 +1059,36 @@ namespace iContrAll.TcpServer
 			{
 				foreach (var a in actionsToAddOrDel)
 				{
+                    if (a.ActionListId == null || a.ActionId == null || a.Order == null || a.DeviceId == null) return;
+
                     Guid actionListId = new Guid(a.ActionListId);
                     
                     int order = -1;
-                    if (int.TryParse(a.Order, out order))
+                    if (!int.TryParse(a.Order, out order))
                     {
                         continue;
                     }
 
                     string deviceId = a.DeviceId;
 
-					//if (p)
-						//dal.AddActionToActionList(actionListId, a.ActionId, order, deviceId);
-					//else
-						//dal.DelActionFromActionList(a.ActionListId, a.ActionId, a.Order, a.DeviceId);
+                    int idxUnderscore = a.ActionId.IndexOf('_');
+                    
+                    int channelId = -1;
+                    if (!int.TryParse(a.ActionId.Substring(0,idxUnderscore), out channelId))
+                    {
+                        continue;
+                    }
+
+                    int actionId = -1;
+                    if (!int.TryParse(a.ActionId.Substring(idxUnderscore+1), out actionId))
+                    {
+                        continue;
+                    }
+
+					if (p)
+						dal.AddActionToActionList(actionListId, deviceId, channelId, actionId, order);
+					else
+                        dal.DelActionFromActionList(actionListId, deviceId, channelId, actionId, order);
 				}
 			}
 		}

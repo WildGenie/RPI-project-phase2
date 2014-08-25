@@ -396,8 +396,8 @@ namespace iContrAll.TcpServer
                         }
                     }
 
-                    cmd.CommandText = "SELECT Actions.DeviceId, Actions.DeviceChannel, Actions.OrderNumber, Actions.ActionListId, ActionTypes.Name "+
-                                      "FROM Actions, ActionTypes "+
+                    cmd.CommandText = "SELECT * "+
+                                      "FROM Actions "+
                                       "WHERE ActionTypes.Id = Actions.ActionTypeId";
                     cmd.ExecuteNonQuery();
 
@@ -408,8 +408,9 @@ namespace iContrAll.TcpServer
                             Action a = new Action
                             {
                                 DeviceId = reader["DeviceId"].ToString(),
+                                DeviceChannel = int.Parse(reader["DeviceChannel"].ToString()),
                                 Order = int.Parse(reader["OrderNumber"].ToString()),
-                                ActionTypeName = reader["Name"].ToString(),
+                                ActionTypeId = int.Parse(reader["ActionTypeId"].ToString()),
 
                             };
                             Guid actionListId = new Guid(reader["ActionListId"].ToString());
@@ -481,7 +482,7 @@ namespace iContrAll.TcpServer
             }
         }
 
-        public void AddActionToActionList(Guid actionListId, int actionType, int channel, int order, string deviceId)
+        public void AddActionToActionList(Guid actionListId, string deviceId, int channel, int actionTypeId, int order)
         {
             try
             {
@@ -497,13 +498,13 @@ namespace iContrAll.TcpServer
                     }
 
                     // not necessary to check, 'cause all of the 3 parameters are key attributes
-                    cmd.CommandText = "INSERT INTO Actions(ActionTypeId, DeviceId, ActionListId, OrderNumber) VALUES(@ActionTypeId, @DeviceId, @ActionListId, @Order)";
-                    cmd.Parameters.AddWithValue("@ActionTypeId", actionType);
-                    cmd.Parameters.AddWithValue("@DeviceId", deviceId.ToString());
+                    cmd.CommandText = "INSERT INTO Actions(ActionListId, DeviceId, DeviceChannel, ActionTypeId, OrderNumber) VALUES(@ActionListId, @DeviceId, @DeviceChannel, @ActionTypeId, @Order)";
                     cmd.Parameters.AddWithValue("@ActionListId", actionListId.ToString());
+                    
+                    cmd.Parameters.AddWithValue("@DeviceId", deviceId);
+                    cmd.Parameters.AddWithValue("@DeviceChannel", channel.ToString());
+                    cmd.Parameters.AddWithValue("@ActionTypeId", actionTypeId);
                     cmd.Parameters.AddWithValue("@Order", order);
-
-
 
                     cmd.ExecuteNonQuery();
                 }
@@ -516,21 +517,22 @@ namespace iContrAll.TcpServer
             }
         }
 
-        public void DelActionFromActionList(Guid actionListId, int actionType /*actionTypes.Name*/, int order, string deviceId)
+        public void DelActionFromActionList(Guid actionListId, string deviceId, int channelId, int actionTypeId, int order)
         {
             try
             {
             using (MySqlCommand cmd = mysqlConn.CreateCommand())
             {
                 // not necessary to check, 'cause all of the 3 parameters are key attributes
-                cmd.CommandText = "DELETE FROM Actions WHERE ActionTypeId=@ActionTypeId AND DeviceId=@DeviceId AND ActionListId=@ActionListId AND OrderNumber=@Order";
-                cmd.Parameters.AddWithValue("@ActionTypeId", actionType);
-                cmd.Parameters.AddWithValue("@DeviceId", deviceId.ToString());
+                cmd.CommandText = "DELETE FROM Actions WHERE ActionListId=@ActionListId AND DeviceId=@DeviceId AND " +
+                                  "DeviceChannel=@DeviceChannel AND ActionTypeId=@ActionTypeId AND OrderNumber=@Order";
                 cmd.Parameters.AddWithValue("@ActionListId", actionListId.ToString());
-                cmd.Parameters.AddWithValue("@Order", order);
+                cmd.Parameters.AddWithValue("@DeviceId", deviceId);
+                cmd.Parameters.AddWithValue("@DeviceChannel", channelId.ToString());
+                cmd.Parameters.AddWithValue("@ActionTypeId", actionTypeId.ToString());
+                cmd.Parameters.AddWithValue("@Order", order.ToString());
 
                 cmd.ExecuteNonQuery();
-
             }
             }
             catch (Exception ex)
