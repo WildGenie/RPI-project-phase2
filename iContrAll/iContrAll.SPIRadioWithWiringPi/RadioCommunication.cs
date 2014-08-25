@@ -19,9 +19,12 @@ namespace iContrAll.SPIRadio
         private Radio()
         {
             Console.WriteLine("!!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!");
-            state = RadioState.None;
-            data = new byte[RadioConstants.FIX_PACKET_LENGTH];
-            
+            // state = (byte)RadioState.None;
+            Volatile.Write(ref state, (byte)RadioState.None);
+
+            //data = new byte[RadioConstants.FIX_PACKET_LENGTH];
+            Volatile.Write(ref data, new byte[RadioConstants.FIX_PACKET_LENGTH]);
+            this.InterruptReceived += Radio_InterruptReceived;
             if (InitRadio())
             {
                 Console.WriteLine("Radio init sikeres");
@@ -48,8 +51,8 @@ namespace iContrAll.SPIRadio
             }
         }
         #endregion
-
-        private volatile RadioState state;
+        PiThreadInterrupts.ISRCallback interruptMethod;
+        private byte state;
         //public byte[] data = new byte[RadioConstants.FIX_PACKET_LENGTH];
 
         public delegate void RadioMessageReceivedDelegate(byte[] data);
@@ -59,7 +62,8 @@ namespace iContrAll.SPIRadio
         {
             try
             {
-                state = RadioState.None;
+                // state = (byte)RadioState.None;
+                Volatile.Write(ref state, (byte)RadioState.None);
 
                 if (Init.WiringPiSetup() < 0)
                 {
@@ -83,7 +87,9 @@ namespace iContrAll.SPIRadio
 
                 Console.WriteLine("GPIO setup OK");
 
-                if (PiThreadInterrupts.wiringPiISR(RadioConstants.INT, (int)PiThreadInterrupts.InterruptLevels.INT_EDGE_FALLING, Interrupt0) < 0)
+                Volatile.Write(ref interruptMethod, Interrupt0);
+
+                if (PiThreadInterrupts.wiringPiISR(RadioConstants.INT, (int)PiThreadInterrupts.InterruptLevels.INT_EDGE_FALLING, Volatile.Read(ref interruptMethod)) < 0)
                 {
                     Console.WriteLine("unable to set interrupt pin\n");
                     return false;
@@ -168,32 +174,42 @@ namespace iContrAll.SPIRadio
                 }
             }
         }
-        volatile byte[] data;
+        byte[] data;
         unsafe void Interrupt0()
         {
             Console.WriteLine("interrup ugras eleje ok");
             try
             {
-                if (state == RadioState.Receive)
+
+                Console.WriteLine("state ok: " + Volatile.Read(ref state));
+                InterruptReceivedDelegate copy = Volatile.Read(ref this.InterruptReceived);
+
+                if (copy!=null)
                 {
-                    Console.WriteLine("packet received");
-                    Read_Rx_Fifo(RadioConstants.P);
-                    if (this.RadioMessageReveived!=null)
-                    {
-                        this.RadioMessageReveived(data);
-                    }
-                    Clear_Int_Flags(RadioConstants.P);
-                    RX_Command(RadioConstants.P);
-                    
+                    copy();
                 }
 
-                if (state == RadioState.Send)
-                {
-                    Console.WriteLine("packet sent");
-                    GPIO.digitalWrite(RadioConstants.TXRX, 0);
-                    Clear_Int_Flags(RadioConstants.P);
-                    RX_Command(RadioConstants.P);
-                }
+                //if (state == (byte)RadioState.Receive)
+                //{
+                //    Console.WriteLine("packet received");
+                //    Read_Rx_Fifo(RadioConstants.P);
+                //    RadioMessageReceivedDelegate tempEvent = Volatile.Read(ref RadioMessageReveived);
+                //    if (tempEvent!=null)
+                //    {
+                //        tempEvent(data);
+                //    }
+                //    Clear_Int_Flags(RadioConstants.P);
+                //    RX_Command(RadioConstants.P);
+                    
+                //}
+
+                //if (state == (byte)RadioState.Send)
+                //{
+                //    Console.WriteLine("packet sent");
+                //    GPIO.digitalWrite(RadioConstants.TXRX, 0);
+                //    Clear_Int_Flags(RadioConstants.P);
+                //    RX_Command(RadioConstants.P);
+                //}
                
             }
             catch (Exception e)
@@ -206,39 +222,43 @@ namespace iContrAll.SPIRadio
                  
         }
 
-        //void Radio_InterruptReceived()
-        //{
-        //    try
-        //    {
-        //        if (state == RadioState.Receive)
-        //        {
-        //            Console.WriteLine("packet received");
-        //            Read_Rx_Fifo(RadioConstants.P);
-        //            Clear_Int_Flags(RadioConstants.P);
-        //            RX_Command(RadioConstants.P);
-        //            string s = Encoding.UTF8.GetString(receivedMessage);
-        //            Console.WriteLine("Interrupt, message received: " + s);
-        //            if (RadioMessageReveived != null)
-        //            {
-        //                RadioMessageReveived(new RadioMessageEventArgs(receivedMessage, 0));
-        //            }
-        //        }
+        private delegate void InterruptReceivedDelegate();
+        private event InterruptReceivedDelegate InterruptReceived;
 
-        //        if (state == RadioState.Send)
-        //        {
-        //            Console.WriteLine("packet sent");
-        //            //GPIO.digitalWrite(RadioConstants.TXRX, 0);
-        //            Clear_Int_Flags(RadioConstants.P);
-        //            RX_Command(RadioConstants.P);
-        //        }
-        //    }
-        //    catch (NullReferenceException e)
-        //    {
-        //        Console.WriteLine("EXCEPTION AZ 'Radio_InterruptReceived'-ben!!!!");
-        //        Console.WriteLine(e.Message);
-        //        Console.WriteLine(e.StackTrace);
-        //    }
-        //}
+        void Radio_InterruptReceived()
+        {
+            try
+            {
+                if (Volatile.Read(ref state) == (byte)RadioState.Receive)
+                {
+                    Console.WriteLine("packet received");
+                    Read_Rx_Fifo(RadioConstants.P);
+                    Clear_Int_Flags(RadioConstants.P);
+                    RX_Command(RadioConstants.P);
+                    // string s = Encoding.UTF8.GetString(Volatile.Read(ref data));
+                    // Console.WriteLine("Interrupt, message received: " + s);
+                    RadioMessageReceivedDelegate tempEvent = Volatile.Read(ref RadioMessageReveived);
+                    if (tempEvent != null)
+                    {
+                        tempEvent(Volatile.Read(ref data));
+                    }
+                }
+
+                if (Volatile.Read(ref state) == (byte)RadioState.Send)
+                {
+                    Console.WriteLine("packet sent");
+                    //GPIO.digitalWrite(RadioConstants.TXRX, 0);
+                    Clear_Int_Flags(RadioConstants.P);
+                    RX_Command(RadioConstants.P);
+                }
+            }
+            catch (NullReferenceException e)
+            {
+                Console.WriteLine("EXCEPTION AZ 'Radio_InterruptReceived'-ben!!!!");
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+            }
+        }
 
         unsafe void Read_Rx_Fifo(int p)
         {
@@ -261,7 +281,8 @@ namespace iContrAll.SPIRadio
             //byte[] readMessage = new byte[RadioConstants.FIX_PACKET_LENGTH];
             for (int i = 0; i < RadioConstants.FIX_PACKET_LENGTH; i++)
             {
-                data[i] = tempData[i + 1];
+                //data[i] = tempData[i + 1];
+                Volatile.Write(ref data[i], tempData[i + 1]);
             }
 
             CTS();
@@ -295,7 +316,9 @@ namespace iContrAll.SPIRadio
 
         unsafe void RX_Command(int p)
         {
-            state = RadioState.Receive;
+            //state = (byte)RadioState.Receive;
+            Volatile.Write(ref state, (byte)RadioState.Receive);
+
             byte[] d = new byte[] { RadioConstants.CMD_START_RX, 0, 0, 0, RadioConstants.FIX_PACKET_LENGTH, 0, 0, 0 };
             fixed (byte* pD = d)
             {
@@ -373,7 +396,9 @@ namespace iContrAll.SPIRadio
 
         unsafe void TX_Command(int p)
         {
-            state = RadioState.Send; 
+            // state = (byte)RadioState.Send;
+            Volatile.Write(ref state, (byte)RadioState.Send);
+
             // Console.WriteLine("TX_Command: state changed to: " + state);
             GPIO.digitalWrite(RadioConstants.TXRX, 1); 
             // Console.WriteLine("TX_Command: txrx = > 1");
