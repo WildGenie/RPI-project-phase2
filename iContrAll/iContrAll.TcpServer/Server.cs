@@ -85,14 +85,20 @@ namespace iContrAll.TcpServer
                 {
                     string stateMsg = senderId + targetId+ "60" + "chs" + (i + 1) + "=";
                     stateMsg += states[i].Equals('1') ? '1' : '0';
-                    Console.WriteLine("Response : " + stateMsg);
+                    Console.WriteLine("Broadcast : " + stateMsg);
                     SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(stateMsg)));
 
                     string dimMsg = senderId + targetId + "60" + "chd" + (i + 1) + "=";
-                    dimMsg += dimValues[i];
-
+                    string dimm = ((dimValues[i] / 100) % 10).ToString() + ((dimValues[i] / 10) % 10).ToString() + (dimValues[i] % 10).ToString();
+                    dimMsg += dimm;
                     Console.WriteLine("Broadcast : " + dimMsg);
                     SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg)));
+
+                    string powerMsg = senderId + targetId + "60" + "chi" + (i + 1) + "=";
+                    string power = ((powerValues[i] / 100) % 10).ToString() + ((powerValues[i] / 10) % 10).ToString() + (powerValues[i] % 10).ToString();
+                    powerMsg += power;
+                    Console.WriteLine("Broadcast : " + powerMsg);
+                    SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(powerMsg)));
                 }
             }
             else Console.WriteLine("Nemjött be!");

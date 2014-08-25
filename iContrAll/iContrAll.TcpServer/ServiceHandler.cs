@@ -319,9 +319,17 @@ namespace iContrAll.TcpServer
 
                             tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
 
-                            string dimMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chd" + s.DeviceChannel + "=" + s.Value;
+                            string dimm = ((s.Value / 100) % 10).ToString() + ((s.Value / 10) % 10).ToString() + (s.Value % 10).ToString();
+                            string dimMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chd" + s.DeviceChannel + "=" + dimm;
                             Console.WriteLine("Response sent: " + dimMsg);
                             bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg));
+
+                            tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
+
+                            string power = ((s.Power / 100) % 10).ToString() + ((s.Power / 10) % 10).ToString() + (s.Power % 10).ToString();
+                            string powerMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chi" + s.DeviceChannel + "=" + power;
+                            Console.WriteLine("Response sent: " + powerMsg);
+                            bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(powerMsg));
 
                             tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
                         }
