@@ -1,0 +1,6 @@
+rc.local-ba kell beletenni
+# gpio betoltes
+sudo gpio load spi
+# az '&' jel a háttérben futás jelzésére szolgál, nem kötelezõ
+sudo /path/to/iContrAll.TcpServer.exe &
+
