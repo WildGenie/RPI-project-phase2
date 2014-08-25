@@ -391,21 +391,21 @@ namespace iContrAll.TcpServer
                                 {
                                     Id = new Guid(reader["Id"].ToString()),
                                     Name = reader["Name"].ToString(),
-                                    Actions = new List<Action>()
+                                    Actions = new List<ActionEntity>()
                                 });
                         }
                     }
 
-                    cmd.CommandText = "SELECT * "+
-                                      "FROM Actions "+
-                                      "WHERE ActionTypes.Id = Actions.ActionTypeId";
+                    cmd.CommandText = "SELECT * FROM Actions";
+                                      //"FROM Actions"+
+                                      //"WHERE ActionTypes.Id = Actions.ActionTypeId"; // ?????
                     cmd.ExecuteNonQuery();
 
                     using (var reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            Action a = new Action
+                            ActionEntity a = new ActionEntity
                             {
                                 DeviceId = reader["DeviceId"].ToString(),
                                 DeviceChannel = int.Parse(reader["DeviceChannel"].ToString()),
@@ -430,6 +430,7 @@ namespace iContrAll.TcpServer
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
             }
             return returnList;
@@ -460,6 +461,7 @@ namespace iContrAll.TcpServer
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
             }
         }
@@ -482,29 +484,29 @@ namespace iContrAll.TcpServer
             }
         }
 
-        public void AddActionToActionList(Guid actionListId, string deviceId, int channel, int actionTypeId, int order)
+        public void AddActionToActionList(Guid actionListId, string deviceId, int channel, int actionTypeId)
         {
             try
             {
                 using (MySqlCommand cmd = mysqlConn.CreateCommand())
                 {
-                    ActionList actionList = GetActionLists().First(l => l.Id == actionListId);
+                    //ActionList actionList = GetActionLists().First(l => l.Id == actionListId);
 
-                    if (actionList.Actions.Count(a => a.Order == order) > 0)
-                    {
-                        Console.WriteLine("Tried to add an action with an existing order number again");
-                        cmd.Dispose();
-                        return;
-                    }
+                    //if (actionList.Actions.Count(a => a.Order == order) > 0)
+                    //{
+                    //    Console.WriteLine("Tried to add an action with an existing order number again");
+                    //    cmd.Dispose();
+                    //    return;
+                    //}
 
                     // not necessary to check, 'cause all of the 3 parameters are key attributes
-                    cmd.CommandText = "INSERT INTO Actions(ActionListId, DeviceId, DeviceChannel, ActionTypeId, OrderNumber) VALUES(@ActionListId, @DeviceId, @DeviceChannel, @ActionTypeId, @Order)";
+                    cmd.CommandText = "INSERT INTO Actions(ActionListId, DeviceId, DeviceChannel, ActionTypeId) VALUES(@ActionListId, @DeviceId, @DeviceChannel, @ActionTypeId)";//, @Order)";
                     cmd.Parameters.AddWithValue("@ActionListId", actionListId.ToString());
                     
                     cmd.Parameters.AddWithValue("@DeviceId", deviceId);
                     cmd.Parameters.AddWithValue("@DeviceChannel", channel.ToString());
                     cmd.Parameters.AddWithValue("@ActionTypeId", actionTypeId);
-                    cmd.Parameters.AddWithValue("@Order", order);
+                    //cmd.Parameters.AddWithValue("@Order", order);
 
                     cmd.ExecuteNonQuery();
                 }
@@ -513,11 +515,12 @@ namespace iContrAll.TcpServer
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
             }
         }
 
-        public void DelActionFromActionList(Guid actionListId, string deviceId, int channelId, int actionTypeId, int order)
+        public void DelActionFromActionList(Guid actionListId, string deviceId, int channelId, int actionTypeId)
         {
             try
             {
@@ -525,19 +528,83 @@ namespace iContrAll.TcpServer
             {
                 // not necessary to check, 'cause all of the 3 parameters are key attributes
                 cmd.CommandText = "DELETE FROM Actions WHERE ActionListId=@ActionListId AND DeviceId=@DeviceId AND " +
-                                  "DeviceChannel=@DeviceChannel AND ActionTypeId=@ActionTypeId AND OrderNumber=@Order";
+                                  "DeviceChannel=@DeviceChannel AND ActionTypeId=@ActionTypeId";// AND OrderNumber=@Order";
                 cmd.Parameters.AddWithValue("@ActionListId", actionListId.ToString());
                 cmd.Parameters.AddWithValue("@DeviceId", deviceId);
                 cmd.Parameters.AddWithValue("@DeviceChannel", channelId.ToString());
                 cmd.Parameters.AddWithValue("@ActionTypeId", actionTypeId.ToString());
-                cmd.Parameters.AddWithValue("@Order", order.ToString());
+                //cmd.Parameters.AddWithValue("@Order", order.ToString());
 
                 cmd.ExecuteNonQuery();
             }
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
+            }
+        }
+        
+        public IEnumerable<ActionEntity> GetActionsOfActionList(Guid guid)
+        {
+            var returnList = new List<ActionEntity>();
+
+            try
+            {
+                using (MySqlCommand cmd = mysqlConn.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT * FROM Actions WHERE ActionListId=@ActionListId";
+                    cmd.Parameters.AddWithValue("@ActionListId", guid.ToString()); // TODO: remélem nem "System.Guid"
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            ActionEntity a = new ActionEntity();
+                            a.DeviceId = reader["DeviceId"].ToString();
+                            a.DeviceChannel = int.Parse(reader["DeviceChannel"].ToString());
+                            a.ActionTypeId = int.Parse(reader["ActionTypeId"].ToString());
+                            a.Order = int.Parse(reader["OrderNumber"].ToString());
+
+                            returnList.Add(a);
+                        }
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+            }
+
+            return returnList;
+        }
+        
+        public string GetActionTypeName(int id)
+        {
+            try
+            {
+                string name = string.Empty;
+                using (MySqlCommand cmd = mysqlConn.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT Name FROM ActionTypes WHERE Id=@Id";
+                    cmd.Parameters.AddWithValue("@Id", id.ToString());
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            name = reader[0].ToString();
+                        }
+                    }
+                }
+                return name;
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+                return string.Empty;
             }
         }
 
@@ -615,5 +682,9 @@ namespace iContrAll.TcpServer
         }
 
         #endregion
+
+
+
+        
     }
 }

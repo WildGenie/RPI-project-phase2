@@ -292,6 +292,9 @@ namespace iContrAll.TcpServer
                 case (byte)MessageType.QueryMessageHistory:
                     ResponseMessageHistory(message);
                     break;
+                case (byte)MessageType.eCmdExecActionList:
+                    ExecuteActionList(message);
+                    break;
 				default:
 					break;
 			}
@@ -301,6 +304,8 @@ namespace iContrAll.TcpServer
 			
             return null;
 		}
+
+        
 
         private void ResponseMessageHistory(string message)
         {
@@ -1086,11 +1091,53 @@ namespace iContrAll.TcpServer
                     }
 
 					if (p)
-						dal.AddActionToActionList(actionListId, deviceId, channelId, actionId, order);
+						dal.AddActionToActionList(actionListId, deviceId, channelId, actionId);
 					else
-                        dal.DelActionFromActionList(actionListId, deviceId, channelId, actionId, order);
+                        dal.DelActionFromActionList(actionListId, deviceId, channelId, actionId);
 				}
 			}
 		}
+
+        private void ExecuteActionList(string message)
+        {
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(message);
+
+            XmlNodeList elemList = doc.GetElementsByTagName("id");
+            string elemId = "";
+
+            if (elemList.Count > 0)
+            {
+                elemId = elemList[0].InnerXml;
+            }
+
+            using (var dal = new DataAccesLayer())
+            {
+                var actions = dal.GetActionsOfActionList(new Guid(elemId));
+                
+                string senderId = System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2);
+                
+                foreach (var a in actions)
+                {
+                    string actionName = dal.GetActionTypeName(a.ActionTypeId);
+                    if (string.IsNullOrEmpty(actionName)) continue;
+
+                    string targetId = a.DeviceId;
+
+                    if (a.DeviceId.StartsWith("LC1"))
+                    {
+                        string toState = actionName.Equals("on") ? "1" : (actionName.Equals("off") ? "0" : string.Empty);
+                        if (string.IsNullOrEmpty(toState)) continue;
+
+                        string tag = "67";
+                        string channel = "ch"+a.DeviceChannel+"=";
+
+                        string outputMsg = senderId + targetId + tag + channel + toState;
+                        Console.WriteLine("Profilfuttatasbol RadioCommand: " + outputMsg);
+                        SendCommandOnRadio(outputMsg);
+                    }
+                }
+            }
+        }
 	}
 }

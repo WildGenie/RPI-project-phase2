@@ -24,7 +24,7 @@ namespace iContrAll.TcpServer
         }
     }
 
-    class Action
+    class ActionEntity
     {
         private string deviceId;
         public string DeviceId
@@ -81,8 +81,8 @@ namespace iContrAll.TcpServer
             set { name = value; }
         }
 
-        private List<Action> actions;
-        public List<Action> Actions
+        private List<ActionEntity> actions;
+        public List<ActionEntity> Actions
         {
             get { return actions; }
             set { actions = value; }
