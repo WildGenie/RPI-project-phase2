@@ -37,3 +37,4 @@ Thumbs.db
 obj/
 [Rr]elease*/
 !iContrAll.Executables/iContrAll.TcpServer.exe
+!iContrAll.Executables_profil/iContrAll.TcpServer.exe
