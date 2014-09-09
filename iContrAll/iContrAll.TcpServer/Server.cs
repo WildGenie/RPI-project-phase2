@@ -81,25 +81,37 @@ namespace iContrAll.TcpServer
                     }
                 }
 
+                string responseMsg = senderId + targetId + "60";
+
                 for (int i = 0; i < chCount; i++)
                 {
-                    string stateMsg = senderId + targetId+ "60" + "chs" + (i + 1) + "=";
-                    stateMsg += states[i].Equals('1') ? '1' : '0';
-                    Console.WriteLine("Broadcast : " + stateMsg);
-                    SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(stateMsg)));
+                    // összefűzés
+                    if (i != 0) responseMsg += '&';
 
-                    string dimMsg = senderId + targetId + "60" + "chd" + (i + 1) + "=";
-                    string dimm = ((dimValues[i] / 100) % 10).ToString() + ((dimValues[i] / 10) % 10).ToString() + (dimValues[i] % 10).ToString();
-                    dimMsg += dimm;
-                    Console.WriteLine("Broadcast : " + dimMsg);
-                    SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg)));
+                    string state = "chs" + (i + 1) + "=" + (states[i].Equals('1') ? '1' : '0');
+                    responseMsg += state;
+                    //stateMsg += states[i].Equals('1') ? '1' : '0';
+                    //Console.WriteLine("Broadcast : " + stateMsg);
+                    //SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(stateMsg)));
+                    
+                    //string dimMsg = senderId + targetId + "60" + ;
+                    string dimm = "chd" + (i + 1) + "=" + ((dimValues[i] / 100) % 10).ToString() + ((dimValues[i] / 10) % 10).ToString() + (dimValues[i] % 10).ToString();
+                    //dimMsg += dimm;
+                    //Console.WriteLine("Broadcast : " + dimMsg);
+                    //SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg)));
+                    responseMsg += "&" + dimm;
 
-                    string powerMsg = senderId + targetId + "60" + "chi" + (i + 1) + "=";
-                    string power = ((powerValues[i] / 100) % 10).ToString() + ((powerValues[i] / 10) % 10).ToString() + (powerValues[i] % 10).ToString();
-                    powerMsg += power;
-                    Console.WriteLine("Broadcast : " + powerMsg);
-                    SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(powerMsg)));
+                    //string powerMsg = senderId + targetId + "60" + "chi" + (i + 1) + "=";
+                    string power = "chi" + (i + 1) + "="+((powerValues[i] / 100) % 10).ToString() + ((powerValues[i] / 10) % 10).ToString() + (powerValues[i] % 10).ToString();
+                    //powerMsg += power;
+                    //Console.WriteLine("Broadcast : " + powerMsg);
+
+                    responseMsg += "&" + power;
+                    //SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(powerMsg)));
                 }
+                Console.WriteLine("SendToAllClient: " + responseMsg);
+                SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(responseMsg)));
+                
             }
             else Console.WriteLine("Nemjött be!");
         }
@@ -169,6 +181,12 @@ namespace iContrAll.TcpServer
             var asyncEvent = new SocketAsyncEventArgs();
 
             asyncEvent.SetBuffer(bytesToSend, 0, bytesToSend.Length);
+            foreach (var i in asyncEvent.Buffer)
+            {
+                Console.Write(i + "|");
+            }
+            Console.WriteLine();
+
             lock (clientListSyncObject)
             {
                 foreach (var c in clientList)

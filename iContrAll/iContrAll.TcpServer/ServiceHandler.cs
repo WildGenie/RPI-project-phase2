@@ -316,28 +316,42 @@ namespace iContrAll.TcpServer
                 {
                     if (message.StartsWith("LC1"))
                     {
+                        int i = 0;
+                        string responseMsg = message + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60";
                         foreach (var s in statuses)
                         {
-                            string stateMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chs" + s.DeviceChannel + "=" + (s.State ? '1' : '0');
-                            Console.WriteLine("Response sent: " + stateMsg);
-                            byte[] bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(stateMsg));
+                            if (i != 0) { responseMsg += "&"; i = 1; }
+                            responseMsg += "chs" + s.DeviceChannel + "=" + (s.State ? '1' : '0');
+                            //string stateMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chs" + s.DeviceChannel + "=" + (s.State ? '1' : '0');
+                            //Console.WriteLine("Response sent: " + stateMsg);
+                            //byte[] bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(stateMsg));
 
-                            tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
+                            //tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
 
-                            string dimm = ((s.Value / 100) % 10).ToString() + ((s.Value / 10) % 10).ToString() + (s.Value % 10).ToString();
-                            string dimMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chd" + s.DeviceChannel + "=" + dimm;
-                            Console.WriteLine("Response sent: " + dimMsg);
-                            bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg));
+                            string dimm = "chd" + s.DeviceChannel + "=" + ((s.Value / 100) % 10).ToString() + ((s.Value / 10) % 10).ToString() + (s.Value % 10).ToString();
+                            //string dimMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chd" + s.DeviceChannel + "=" + dimm;
+                            //Console.WriteLine("Response sent: " + dimMsg);
+                            //bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg));
+                            responseMsg += "&" + dimm;
+                            //tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
 
-                            tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
-
-                            string power = ((s.Power / 100) % 10).ToString() + ((s.Power / 10) % 10).ToString() + (s.Power % 10).ToString();
-                            string powerMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chi" + s.DeviceChannel + "=" + power;
-                            Console.WriteLine("Response sent: " + powerMsg);
-                            bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(powerMsg));
-
-                            tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
+                            string power = "chi" + s.DeviceChannel + "=" + ((s.Power / 100) % 10).ToString() + ((s.Power / 10) % 10).ToString() + (s.Power % 10).ToString();
+                            //string powerMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chi" + s.DeviceChannel + "=" + power;
+                            //Console.WriteLine("Response sent: " + powerMsg);
+                            //bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(powerMsg));
+                            responseMsg += "&" + power;
+                            //tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
                         }
+
+                        Console.WriteLine("Response to QueryMessageHistory: " + responseMsg);
+                        byte[] bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(responseMsg));
+                        foreach (var b in bytesToSend)
+                        {
+                            Console.Write(b + "|");
+                        }
+                        Console.WriteLine();
+
+                        tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
                     }
                 }
             }
