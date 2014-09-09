@@ -305,8 +305,6 @@ namespace iContrAll.TcpServer
             return null;
 		}
 
-        
-
         private void ResponseMessageHistory(string message)
         {
             using (var dal = new DataAccesLayer())
