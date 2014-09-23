@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Xml;
@@ -91,7 +92,6 @@ namespace iContrAll.TcpServer
 							// TODO: delete next line, it's just for debugging
 							Console.WriteLine("Response message: " + Encoding.UTF8.GetString(result));
 							// Reply to request
-							// Jójez, ez a cél, hogy ne várjuk meg a választ, gyorsabb legyen, bár nem számít nagyon.
 							clientStream.Write(result, 0, result.Length);
 						}
                         //Console.WriteLine("Radio osztaly letezik ProcessMessage foreach utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
@@ -298,10 +298,7 @@ namespace iContrAll.TcpServer
 				default:
 					break;
 			}
-            
-            //Console.WriteLine("Radio osztaly letezik a switchcase-ek után?? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
-            //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
-			
+
             return null;
 		}
 
@@ -316,27 +313,18 @@ namespace iContrAll.TcpServer
                     {
                         int i = 0;
                         string responseMsg = message + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60";
+                        
                         foreach (var s in statuses)
                         {
                             if (i != 0) { responseMsg += "&"; i = 1; }
                             responseMsg += "chs" + s.DeviceChannel + "=" + (s.State ? '1' : '0');
-                            //string stateMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chs" + s.DeviceChannel + "=" + (s.State ? '1' : '0');
-                            //Console.WriteLine("Response sent: " + stateMsg);
-                            //byte[] bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(stateMsg));
-
-                            //tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
-
+                            
                             string dimm = "chd" + s.DeviceChannel + "=" + ((s.Value / 100) % 10).ToString() + ((s.Value / 10) % 10).ToString() + (s.Value % 10).ToString();
-                            //string dimMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chd" + s.DeviceChannel + "=" + dimm;
-                            //Console.WriteLine("Response sent: " + dimMsg);
-                            //bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg));
+                            
                             responseMsg += "&" + dimm;
-                            //tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
 
                             string power = "chi" + s.DeviceChannel + "=" + ((s.Power / 100) % 10).ToString() + ((s.Power / 10) % 10).ToString() + (s.Power % 10).ToString();
-                            //string powerMsg = s.DeviceId + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60" + "chi" + s.DeviceChannel + "=" + power;
-                            //Console.WriteLine("Response sent: " + powerMsg);
-                            //bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(powerMsg));
+                            
                             responseMsg += "&" + power;
                             //tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
                         }
@@ -395,8 +383,19 @@ namespace iContrAll.TcpServer
 
                     byte[] dimValues = new byte[4] { 0, 0, 0, 0 };
                     // TODO: lekérni rendes dimvalue-kat
-                    dimValues[channelId - 1] = 100;
 
+                    using (var dal = new DataAccesLayer())
+                    {
+                        var statuses = dal.GetDeviceStatus(targetIdInMsg).Where(s => s.DeviceChannel == channelId);
+                        // max 1 lehet
+                        if (statuses.Count() > 0)
+                        {
+                            Console.WriteLine("Kiolvasott dimvalue: " + (byte)statuses.First().Value);
+                            dimValues[channelId - 1] = (byte)statuses.First().Value;
+                        }
+                        else dimValues[channelId - 1] = 100;
+                    }
+                    
                     // byte[] retBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + channelControl + "xxxx" + "xxxx");
                     byte[] basicBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + channelControl + "xxxx");
                     byte[] retBytes = new byte[basicBytes.Length + 4];
@@ -406,6 +405,8 @@ namespace iContrAll.TcpServer
                     
                     //byte[] retBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + channelControl + "xxxx");
                     Radio.Instance.SendMessage(retBytes);
+
+                    
 				}
                 else
                 if (eqPos == 4)
@@ -496,6 +497,7 @@ namespace iContrAll.TcpServer
                     }
                 }
 
+
                 
 			}
             else
@@ -583,6 +585,7 @@ namespace iContrAll.TcpServer
 
             }
 
+            Console.WriteLine("Sent on radio: {0}", message);
             //Console.WriteLine("Radio osztaly letezik SendMessage után??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
             //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 		}
