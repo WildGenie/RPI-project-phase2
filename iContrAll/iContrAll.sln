@@ -9,6 +9,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iContrAll.SsdpServerLib", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iContrAll.SPIRadioWithWiringPi", "iContrAll.SPIRadioWithWiringPi\iContrAll.SPIRadioWithWiringPi.csproj", "{607B15CE-1746-4C52-84AC-F21D1CF832AA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iContrAll.RemoteServer", "iContrAll.RemoteServer\iContrAll.RemoteServer.csproj", "{DC6578BB-8A48-4E06-8D17-44E63760715F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SslServerTest", "SslServerTest\SslServerTest.csproj", "{997337F7-377E-43A6-9F03-D68C87E2F716}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SslClientTest", "SslClientTest\SslClientTest.csproj", "{B41B87A2-8E40-4942-9F49-4C048709C5AC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +55,36 @@ Global
 		{607B15CE-1746-4C52-84AC-F21D1CF832AA}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{607B15CE-1746-4C52-84AC-F21D1CF832AA}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{607B15CE-1746-4C52-84AC-F21D1CF832AA}.Release|Win32.ActiveCfg = Release|Any CPU
+		{DC6578BB-8A48-4E06-8D17-44E63760715F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC6578BB-8A48-4E06-8D17-44E63760715F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC6578BB-8A48-4E06-8D17-44E63760715F}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{DC6578BB-8A48-4E06-8D17-44E63760715F}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{DC6578BB-8A48-4E06-8D17-44E63760715F}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{DC6578BB-8A48-4E06-8D17-44E63760715F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC6578BB-8A48-4E06-8D17-44E63760715F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC6578BB-8A48-4E06-8D17-44E63760715F}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{DC6578BB-8A48-4E06-8D17-44E63760715F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{DC6578BB-8A48-4E06-8D17-44E63760715F}.Release|Win32.ActiveCfg = Release|Any CPU
+		{997337F7-377E-43A6-9F03-D68C87E2F716}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{997337F7-377E-43A6-9F03-D68C87E2F716}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{997337F7-377E-43A6-9F03-D68C87E2F716}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{997337F7-377E-43A6-9F03-D68C87E2F716}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{997337F7-377E-43A6-9F03-D68C87E2F716}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{997337F7-377E-43A6-9F03-D68C87E2F716}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{997337F7-377E-43A6-9F03-D68C87E2F716}.Release|Any CPU.Build.0 = Release|Any CPU
+		{997337F7-377E-43A6-9F03-D68C87E2F716}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{997337F7-377E-43A6-9F03-D68C87E2F716}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{997337F7-377E-43A6-9F03-D68C87E2F716}.Release|Win32.ActiveCfg = Release|Any CPU
+		{B41B87A2-8E40-4942-9F49-4C048709C5AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B41B87A2-8E40-4942-9F49-4C048709C5AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B41B87A2-8E40-4942-9F49-4C048709C5AC}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{B41B87A2-8E40-4942-9F49-4C048709C5AC}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{B41B87A2-8E40-4942-9F49-4C048709C5AC}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{B41B87A2-8E40-4942-9F49-4C048709C5AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B41B87A2-8E40-4942-9F49-4C048709C5AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B41B87A2-8E40-4942-9F49-4C048709C5AC}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{B41B87A2-8E40-4942-9F49-4C048709C5AC}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{B41B87A2-8E40-4942-9F49-4C048709C5AC}.Release|Win32.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
