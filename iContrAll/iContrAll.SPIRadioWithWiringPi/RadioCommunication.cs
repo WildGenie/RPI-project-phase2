@@ -217,9 +217,7 @@ namespace iContrAll.SPIRadio
                 Console.WriteLine("EXCEPTION AZ 'Interrupt0'-ban!!!!");
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
-            }
-            
-                 
+            } 
         }
 
         private delegate void InterruptReceivedDelegate();

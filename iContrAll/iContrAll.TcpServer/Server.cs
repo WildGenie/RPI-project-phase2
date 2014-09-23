@@ -17,9 +17,10 @@ namespace iContrAll.TcpServer
 		private int port;
         private List<ServiceHandler> clientList = new List<ServiceHandler>();
 
+        private TcpClient remoteServer;
+
 		public Server(int port)
 		{
-
 			Radio.Instance.RadioMessageReveived += ProcessReceivedRadioMessage;
 
 			this.port = port;
@@ -27,6 +28,41 @@ namespace iContrAll.TcpServer
             
 			this.listenThread = new Thread(new ThreadStart(ListenForClients));
 			this.listenThread.Start();
+            //try
+            //{
+            //    this.remoteServer = new TcpClient();
+            //    // TODO: ne beégetett cím legyen
+            //    IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse("79.172.214.136"), 1124);
+            //    remoteServer.Connect(serverEndPoint);
+            //    string message = "Test raspberry login";
+            //    Byte[] data = System.Text.Encoding.UTF8.GetBytes(message);
+
+            //    // Get a client stream for reading and writing. 
+            //    //  Stream stream = client.GetStream();
+
+            //    NetworkStream stream = remoteServer.GetStream();
+
+            //    // Send the message to the connected TcpServer. 
+            //    stream.Write(data, 0, data.Length);
+
+            //    Console.WriteLine("Sent: {0}", message);
+
+            //    // Close everything.
+            //    stream.Close();
+            //    remoteServer.Close();
+            //}
+            //catch (Exception e)
+            //{
+            //    Console.WriteLine(e.Message);
+            //}
+
+            //byte[] basicBytesToSend = Encoding.UTF8.GetBytes("00001111LC10000101x11xxxxxx");
+            //byte[] bytesToSend = new byte[basicBytesToSend.Length + 4];
+            //byte[] bullshitdimValues = new byte[4] { 100, 100, 0, 0 };
+
+            //Array.Copy(basicBytesToSend, bytesToSend, basicBytesToSend.Length);
+            //Array.Copy(bullshitdimValues, 0, bytesToSend, basicBytesToSend.Length, 4);
+            //Radio.Instance.SendMessage(bytesToSend);
 		}
 
         //private void ProcessReceivedRadioMessage(RadioMessageEventArgs e)
@@ -53,11 +89,11 @@ namespace iContrAll.TcpServer
             // ha nem mihozzánk érkezik az üzenet, eldobjuk
             if (targetId != System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2)) return;
 
-            // debughoz
-            foreach (var b in receivedBytes)
-            {
-                Console.Write(b+"|");
-            }
+            //// debughoz
+            //foreach (var b in receivedBytes)
+            //{
+            //    Console.Write(b+"|");
+            //}
             Console.WriteLine();
 
 
@@ -181,10 +217,10 @@ namespace iContrAll.TcpServer
             var asyncEvent = new SocketAsyncEventArgs();
 
             asyncEvent.SetBuffer(bytesToSend, 0, bytesToSend.Length);
-            foreach (var i in asyncEvent.Buffer)
-            {
-                Console.Write(i + "|");
-            }
+            //foreach (var i in asyncEvent.Buffer)
+            //{
+            //    Console.Write(i + "|");
+            //}
             Console.WriteLine();
 
             lock (clientListSyncObject)
