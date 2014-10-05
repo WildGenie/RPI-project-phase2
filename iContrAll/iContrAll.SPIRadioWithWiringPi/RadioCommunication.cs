@@ -145,7 +145,7 @@ namespace iContrAll.SPIRadio
                 // Console.WriteLine("this.ToString() a txcommand után" + this.ToString());
                 
 
-                // Thread.Sleep(RadioConstants.DD);
+                Thread.Sleep(RadioConstants.DD);
                 Console.WriteLine("Elvileg a kiküldés végére ér");
                 return true;
             }
