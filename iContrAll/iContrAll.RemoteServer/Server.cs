@@ -58,7 +58,7 @@ namespace iContrAll.RemoteServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception in ListenForClients()");
+                Console.WriteLine("Exception in ListenForRaspberrys()");
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
             }
