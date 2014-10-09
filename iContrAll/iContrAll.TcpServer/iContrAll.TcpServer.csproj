@@ -68,6 +68,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Service Include="{3259AA49-8AA1-44D3-9025-A0B520596A8C}" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\iContrAll.SPIRadioWithWiringPi\iContrAll.SPIRadioWithWiringPi.csproj">
       <Project>{607b15ce-1746-4c52-84ac-f21d1cf832aa}</Project>
       <Name>iContrAll.SPIRadioWithWiringPi</Name>
@@ -76,9 +79,6 @@
       <Project>{d3658e6e-99b1-435f-9261-1df6b496e893}</Project>
       <Name>iContrAll.SsdpServerLib</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Service Include="{3259AA49-8AA1-44D3-9025-A0B520596A8C}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

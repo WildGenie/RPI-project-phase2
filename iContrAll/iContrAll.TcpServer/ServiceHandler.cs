@@ -69,6 +69,7 @@ namespace iContrAll.TcpServer
 						}
                         catch(Exception e)
                         {
+                            Console.WriteLine("Exception while reading from socket {0}", this.Endpoint);
                             break;
                         }
                         if (numberOfBytesRead <= 0)
@@ -122,9 +123,10 @@ namespace iContrAll.TcpServer
                 asyncEvent.Completed += OnMessageSendCompleted;
                 tcpClient.Client.SendAsync(asyncEvent);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Console.WriteLine(Endpoint.ToString() + " is disconnected.");
+                Console.WriteLine(Endpoint.ToString() + " is disconnected. Found out from exception.");
+                Console.WriteLine("Error: {0}", ex.ToString());
                 if (RemoveClient != null)
                     RemoveClient(Endpoint);
             }

@@ -151,7 +151,7 @@ namespace iContrAll.SPIRadio
             }
             catch(Exception e)
             {
-                Console.WriteLine("EXCEPTION A 'SendMessage'-ben!!!");
+                Console.WriteLine("EXCEPTION A 'RadioCommunication.SendMessage'-ben!!!");
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
                 
@@ -252,7 +252,7 @@ namespace iContrAll.SPIRadio
             }
             catch (NullReferenceException e)
             {
-                Console.WriteLine("EXCEPTION AZ 'Radio_InterruptReceived'-ben!!!!");
+                Console.WriteLine("NullReferenceException az 'Radio_InterruptReceived'-ben!!!!");
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
             }
