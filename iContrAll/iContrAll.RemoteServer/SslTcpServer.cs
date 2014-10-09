@@ -177,11 +177,11 @@ namespace iContrAll.RemoteServer
             return 0;
         }
 
-        private static X509Certificate getServerCert()
+        private static X509Certificate getServerCert(string certificateName) // certificateName = "alpha.icontrall.hu"
         {
             X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
             store.Open(OpenFlags.ReadOnly);
-            X509CertificateCollection cert = store.Certificates.Find(X509FindType.FindBySubjectName, "alpha.icontrall.hu", false);
+            X509CertificateCollection cert = store.Certificates.Find(X509FindType.FindBySubjectName, certificateName, false);
             return cert[0];
         }
     }
