@@ -17,8 +17,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealTimeClockTest", "RealTi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SslTcpClientTest", "SslTcpClientTest\SslTcpClientTest.csproj", "{76B00C7C-3483-4373-82FE-F3E1D5B22B02}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kodolo", "kodolo\kodolo.vcxproj", "{33CF14D8-FB70-4662-957E-C33DF1513E82}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,16 +97,6 @@ Global
 		{76B00C7C-3483-4373-82FE-F3E1D5B22B02}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{76B00C7C-3483-4373-82FE-F3E1D5B22B02}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{76B00C7C-3483-4373-82FE-F3E1D5B22B02}.Release|Win32.ActiveCfg = Release|Any CPU
-		{33CF14D8-FB70-4662-957E-C33DF1513E82}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{33CF14D8-FB70-4662-957E-C33DF1513E82}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{33CF14D8-FB70-4662-957E-C33DF1513E82}.Debug|Mixed Platforms.Build.0 = Debug|Win32
-		{33CF14D8-FB70-4662-957E-C33DF1513E82}.Debug|Win32.ActiveCfg = Debug|Win32
-		{33CF14D8-FB70-4662-957E-C33DF1513E82}.Debug|Win32.Build.0 = Debug|Win32
-		{33CF14D8-FB70-4662-957E-C33DF1513E82}.Release|Any CPU.ActiveCfg = Release|Win32
-		{33CF14D8-FB70-4662-957E-C33DF1513E82}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{33CF14D8-FB70-4662-957E-C33DF1513E82}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{33CF14D8-FB70-4662-957E-C33DF1513E82}.Release|Win32.ActiveCfg = Release|Win32
-		{33CF14D8-FB70-4662-957E-C33DF1513E82}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
