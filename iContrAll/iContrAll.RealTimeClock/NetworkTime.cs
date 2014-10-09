@@ -103,9 +103,7 @@ public class NetworkTime {
 				
 				return utc ? date : date.ToLocalTime();
 
-			} catch (Exception) {
-                Console.WriteLine("Exception at NTP");
-            }
+			} catch (Exception) { }
 		}
 
 		throw new NoServerFoundException("no working server has been found");

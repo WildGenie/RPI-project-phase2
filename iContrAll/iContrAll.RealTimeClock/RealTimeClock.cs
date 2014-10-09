@@ -13,6 +13,20 @@ namespace iContrAll.RealTimeClock
         int fd;
         bool initOK = false;
 
+        public DateTime GetDateTime()
+        {
+            try
+            {
+                DateTime now = new NetworkTime().GetDateTime(true);
+                return now;
+            }
+            catch (NoServerFoundException ex)
+            {
+                Console.WriteLine(ex.Message);
+                return Read();
+            }
+        }
+
         public bool Synchronize()
         {
             if (!initOK) fd = InitI2C();
