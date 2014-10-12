@@ -6,7 +6,10 @@ using System.Threading;
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
-
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Authentication;
+using System.Globalization;
 
 namespace iContrAll.TcpServer
 {
@@ -17,52 +20,35 @@ namespace iContrAll.TcpServer
 		private int port;
         private List<ServiceHandler> clientList = new List<ServiceHandler>();
 
+        private Thread remoteServerThread;
         private TcpClient remoteServer;
+        private SslStream sslStream;
 
-		public Server(int port)
+        string remoteServerAddress;
+        int remoteServerPort;
+        string serverCertificateName;
+        string certificatePath;
+        string certificatePassphrase;
+
+		public Server(int port, string remoteServerAddress, int remoteServerPort,
+            string serverCertificateName, string certificatePath, string certificatePassphrase)
 		{
+            this.remoteServerAddress = remoteServerAddress;
+            this.remoteServerPort = remoteServerPort;
+            this.serverCertificateName = serverCertificateName;
+            this.certificatePassphrase = certificatePassphrase;
+            this.certificatePath = certificatePath;
+
 			Radio.Instance.RadioMessageReveived += ProcessReceivedRadioMessage;
 
 			this.port = port;
 			this.tcpListener = new TcpListener(IPAddress.Any, this.port);
             
-			this.listenThread = new Thread(new ThreadStart(ListenForClients));
+			this.listenThread = new Thread(new ThreadStart(ListenForLocalLANClients));
 			this.listenThread.Start();
-            //try
-            //{
-            //    this.remoteServer = new TcpClient();
-            //    // TODO: ne beégetett cím legyen
-            //    IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse("79.172.214.136"), 1124);
-            //    remoteServer.Connect(serverEndPoint);
-            //    string message = "Test raspberry login";
-            //    Byte[] data = System.Text.Encoding.UTF8.GetBytes(message);
 
-            //    // Get a client stream for reading and writing. 
-            //    //  Stream stream = client.GetStream();
-
-            //    NetworkStream stream = remoteServer.GetStream();
-
-            //    // Send the message to the connected TcpServer. 
-            //    stream.Write(data, 0, data.Length);
-
-            //    Console.WriteLine("Sent: {0}", message);
-
-            //    // Close everything.
-            //    stream.Close();
-            //    remoteServer.Close();
-            //}
-            //catch (Exception e)
-            //{
-            //    Console.WriteLine(e.Message);
-            //}
-
-            //byte[] basicBytesToSend = Encoding.UTF8.GetBytes("00001111LC10000101x11xxxxxx");
-            //byte[] bytesToSend = new byte[basicBytesToSend.Length + 4];
-            //byte[] bullshitdimValues = new byte[4] { 100, 100, 0, 0 };
-
-            //Array.Copy(basicBytesToSend, bytesToSend, basicBytesToSend.Length);
-            //Array.Copy(bullshitdimValues, 0, bytesToSend, basicBytesToSend.Length, 4);
-            //Radio.Instance.SendMessage(bytesToSend);
+            this.remoteServerThread = new Thread(new ThreadStart(RemoteServerManaging));
+            this.remoteServerThread.Start();
 		}
 
         //private void ProcessReceivedRadioMessage(RadioMessageEventArgs e)
@@ -171,7 +157,7 @@ namespace iContrAll.TcpServer
 
         private object clientListSyncObject = new object();
 
-		private void ListenForClients()
+		private void ListenForLocalLANClients()
 		{
             try
             {
@@ -184,7 +170,9 @@ namespace iContrAll.TcpServer
                     TcpClient client = this.tcpListener.AcceptTcpClient();
                     Console.WriteLine("Client connected: {0}", client.Client.RemoteEndPoint);
 
-                    ServiceHandler sh = new ServiceHandler(client);
+                    IConnectedDevice connectedDevice = new LocalConnectedDevice(client);
+
+                    ServiceHandler sh = new ServiceHandler(connectedDevice);
                     sh.RemoveClient += RemoveAClient;
 
                     // TODO: start() a servicehandlernek
@@ -230,6 +218,302 @@ namespace iContrAll.TcpServer
                     c.SendRadioMessage(asyncEvent);
                 }
             }
+        }
+
+        private const int bufferSize = 32768;
+
+        private void RemoteServerManaging()
+        {
+            if (!ConnectToRemoteServer()) return;
+            var readBuffer = new byte[bufferSize];
+            int numberOfBytesRead = -1;
+            try
+            {
+                if (sslStream.CanRead)
+                {
+                    while (true)
+                    {
+                        try
+                        {
+                            numberOfBytesRead = sslStream.Read(readBuffer, 0, bufferSize);
+                        }
+                        catch (ArgumentOutOfRangeException)
+                        {
+                            Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
+                            continue;
+                        }
+                        catch (Exception)
+                        {
+                            Console.WriteLine("Exception while reading from socket {0}", this.remoteServer.Client.RemoteEndPoint);
+                            break;
+                        }
+
+                        if (numberOfBytesRead <= 0)
+                        {
+                            Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, remoteServer.Client.RemoteEndPoint.ToString());
+                            break;
+                        }
+
+                        Console.WriteLine("Message (length={1}) received from: {0} at {2}", remoteServer.Client.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
+
+                        byte[] readBytes = readBuffer.Take(numberOfBytesRead).ToArray();
+
+                        foreach (var message in ProcessBuffer(readBytes))
+                        {
+                            ProcessMessage(message);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+
+                sslStream.Close(); // including clientStream.Close();
+                remoteServer.Close();
+                Console.WriteLine("RemoteServer zár");
+            }
+        }
+
+        private List<Message> ProcessBuffer(byte[] readBuffer)
+		{
+			var returnList = new List<Message>();
+			
+			// felfűzzük az elejére a maradékot
+			byte[] completeBuffer;
+			//if (trailingBuffer.Length > 0)
+			//{
+			//    completeBuffer = new byte[trailingBuffer.Length + readBuffer.Length];
+			//    Array.Copy(trailingBuffer, completeBuffer, trailingBuffer.Length);
+			//    Array.Copy(readBuffer, 0, completeBuffer, trailingBuffer.Length, readBuffer.Length);
+			//}
+			//else 
+			completeBuffer = readBuffer;
+
+			while (completeBuffer.Length > 0)
+			{
+				if (completeBuffer.Length<4) break;
+
+				byte[] messageTypeArray = new byte[4];
+				Array.Copy(completeBuffer, messageTypeArray, 4);
+
+				int messageType = BitConverter.ToInt32(messageTypeArray, 0);
+
+				bool exists = false;
+
+				// TODO: extract, do it only once!!
+				foreach (var e in Enum.GetValues(typeof(MessageType)))
+				{
+					if ((int)e == messageType)
+					{
+						exists = true;
+						break;
+					}
+				}
+
+				if (!exists)
+				{
+					
+					Console.WriteLine("Gyanus!");
+					break;
+					
+					//if (completeBuffer.Length > 4)
+					//{
+					//    var temp = completeBuffer;
+					//    temp.CopyTo(completeBuffer, 4);
+					//    completeBuffer = temp;
+					//}
+				}
+
+				if (completeBuffer.Length<8) break;
+
+				byte[] messageLengthArray = new byte[4];
+				Array.Copy(completeBuffer, 4, messageLengthArray, 0, 4);
+
+				int messageLength = BitConverter.ToInt32(messageLengthArray, 0);
+
+				// TODO: az összes ilyen esetkor (pl. kétszer feljebb) el kell tárolni a trailMessage-ben!
+				if(completeBuffer.Length < 8 + messageLength) break;
+
+				byte[] messageArray = new byte[messageLength];
+				Array.Copy(completeBuffer, 8, messageArray, 0, messageLength);
+				
+				string message = Encoding.UTF8.GetString(messageArray);
+
+				returnList.Add(new Message(messageType, messageLength, message));
+
+				//Console.WriteLine(completeBuffer.Length + " - " + (8 + messageArray.Length));
+				if (completeBuffer.Length >= 8 + messageArray.Length) // CONTINUE,
+				{
+					byte[] tempBuf = new byte[completeBuffer.Length - (8 + messageArray.Length)];
+					// Console.WriteLine(completeBuffer.Length + " - " + (8 + messageArray.Length) + " = tempBuf.Length: " + tempBuf.Length);
+					Array.Copy(completeBuffer, 8 + messageArray.Length, tempBuf, 0, completeBuffer.Length - (8 + messageArray.Length));
+					completeBuffer = tempBuf;
+				}
+			}
+
+			return returnList;
+		}
+
+        private void ProcessMessage(Message m)
+		{
+			byte messageType = (byte)m.Type;
+			int messageLength = m.Length;
+			string message = m.Content;
+
+            Console.WriteLine("Message: Type={0}: {1}", (MessageType)messageType, message);
+
+			if (m.Type == MessageType.CreateThreadFor)
+            {
+                TcpClient remoteConnection = new TcpClient(remoteServerAddress, remoteServerPort);
+                Console.WriteLine("Connected to remoteserver");
+                var sslStreamForClient = new SslStream(
+                    remoteConnection.GetStream(),
+                    false,
+                    new RemoteCertificateValidationCallback(ValidateServerCertificate),
+                    new LocalCertificateSelectionCallback(CertificateSelectionCallback)
+                );
+
+                X509Certificate cert = new X509Certificate2(certificatePath, certificatePassphrase); //"/home/pi/SslClientTest2/bin/Debug/server.p12", "allcontri");
+                X509CertificateCollection certs = new X509CertificateCollection();
+                certs.Add(cert);
+
+                // The server name must match the name on the server certificate. 
+                try
+                {
+                    sslStreamForClient.AuthenticateAsClient(serverCertificateName,
+                        certs,
+                        SslProtocols.Tls,
+                        false); // check cert revokation);
+                }
+                catch (AuthenticationException e)
+                {
+                    Console.WriteLine("Exception: {0}", e.Message);
+                    if (e.InnerException != null)
+                    {
+                        Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                    }
+                    Console.WriteLine("Authentication failed - closing the connection.");
+                    remoteServer.Close();
+                    return;
+                }
+
+                // Signing that this is the thread for the remote device communication
+                byte[] messageContent = Encoding.UTF8.GetBytes(message);
+                byte[] data = BuildMessage(-3, messageContent);
+
+                sslStreamForClient.Write(data, 0, data.Length);
+                sslStreamForClient.Flush();
+
+                RemoteConnectedDevice rcd = new RemoteConnectedDevice(remoteConnection, sslStreamForClient, message);
+
+                ServiceHandler sh = new ServiceHandler(rcd);
+                sh.RemoveClient += RemoveAClient;
+
+                lock (clientListSyncObject)
+                {
+                    clientList.Add(sh);
+                }
+            }
+
+		}
+
+        private bool ConnectToRemoteServer()
+        {
+            try
+            {
+                this.remoteServer = new TcpClient(remoteServerAddress, remoteServerPort);
+                Console.WriteLine("Connected to remoteserver");
+                this.sslStream = new SslStream(
+                    remoteServer.GetStream(),
+                    false,
+                    new RemoteCertificateValidationCallback(ValidateServerCertificate),
+                    new LocalCertificateSelectionCallback(CertificateSelectionCallback)
+                );
+
+                X509Certificate cert = new X509Certificate2(certificatePath, certificatePassphrase); //"/home/pi/SslClientTest2/bin/Debug/server.p12", "allcontri");
+                X509CertificateCollection certs = new X509CertificateCollection();
+                certs.Add(cert);
+
+                // The server name must match the name on the server certificate. 
+                try
+                {
+                    sslStream.AuthenticateAsClient(serverCertificateName,
+                        certs,
+                        SslProtocols.Tls,
+                        false); // check cert revokation);
+                }
+                catch (AuthenticationException e)
+                {
+                    Console.WriteLine("Exception: {0}", e.Message);
+                    if (e.InnerException != null)
+                    {
+                        Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                    }
+                    Console.WriteLine("Authentication failed - closing the connection.");
+                    remoteServer.Close();
+                    return false;
+                }
+
+                // Sending the device id to the server inside the login message
+                byte[] message = Encoding.UTF8.GetBytes(System.Configuration.ConfigurationManager.AppSettings["loginid"]);
+                byte[] data = BuildMessage(-1, message);
+                //NetworkStream stream = remoteServer.GetStream();
+                sslStream.Write(data, 0, data.Length);
+                sslStream.Flush();
+
+                return true;
+            }
+            catch (ArgumentNullException e)
+            {
+                Console.WriteLine("ArgumentNullException: {0}", e);
+                return false;
+            }
+            catch (SocketException e)
+            {
+                Console.WriteLine("SocketException: {0}", e);
+                return false;
+            }
+        }
+
+        private void PingRemoteServer()
+        {
+            try
+            {
+                this.sslStream.Write(BuildMessage(-3, null));
+                this.sslStream.Flush();
+            }
+            catch(Exception)
+            {
+                // we need to reconnect
+                ConnectToRemoteServer();
+            }
+        }
+
+        // The following method is invoked by the RemoteCertificateValidationDelegate. 
+        public bool ValidateServerCertificate(
+              object sender,
+              X509Certificate certificate,
+              X509Chain chain,
+              SslPolicyErrors sslPolicyErrors)
+        {
+            if (sslPolicyErrors == SslPolicyErrors.None)
+                return true;
+
+            Console.WriteLine("Certificate error: {0}", sslPolicyErrors);
+
+            // Do not allow this client to communicate with unauthenticated servers. 
+            // return false;
+            return true;
+        }
+
+        X509Certificate CertificateSelectionCallback(object sender,
+            string targetHost,
+            X509CertificateCollection localCertificates,
+            X509Certificate remoteCertificate,
+            string[] acceptableIssuers)
+        {
+            Console.WriteLine("CertificateSelectionCallback");
+            return localCertificates[0];
         }
 	}
 }

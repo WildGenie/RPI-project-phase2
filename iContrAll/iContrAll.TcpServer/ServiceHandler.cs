@@ -20,7 +20,7 @@ namespace iContrAll.TcpServer
 	{
 		private const int bufferSize = 32768;
 		
-		private TcpClient tcpClient;
+		private IConnectedDevice tcpClient;
 		private ClientState clientState;
 
         public EndPoint Endpoint { get; set; }
@@ -28,10 +28,10 @@ namespace iContrAll.TcpServer
         public delegate void RemoveClientEH(EndPoint ep);
         public event RemoveClientEH RemoveClient;
 
-		public ServiceHandler(TcpClient client)
+		public ServiceHandler(IConnectedDevice client)
 		{
 			this.tcpClient = client;
-            this.Endpoint = client.Client.RemoteEndPoint;
+            this.Endpoint = client.RemoteEndPoint;
 			clientState = ClientState.LoginPhase;
 
 			Thread commThread = new Thread(HandleMessages);
@@ -41,15 +41,15 @@ namespace iContrAll.TcpServer
 		private void HandleMessages()
 		{
 			Console.WriteLine("HandleMessages started");
-			NetworkStream clientStream = null;
+			// NetworkStream clientStream = null;
 			var readBuffer = new byte[bufferSize];
 			int numberOfBytesRead = 0;
 
 			try
 			{
-				clientStream = tcpClient.GetStream();
+				// clientStream = tcpClient.GetStream();
 
-				if (clientStream.CanRead)
+				if (tcpClient.CanRead)
 				{
 					while (true)
 					{
@@ -57,7 +57,7 @@ namespace iContrAll.TcpServer
 						{
                             // Console.WriteLine("Radio osztaly letezik olvasas elott??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
                             //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
-							numberOfBytesRead = clientStream.Read(readBuffer, 0, bufferSize);
+                            numberOfBytesRead = tcpClient.Read(readBuffer, 0, bufferSize);
 							// Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);
                             //Console.WriteLine("Radio osztaly letezik olvasas utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
                             //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
@@ -67,18 +67,18 @@ namespace iContrAll.TcpServer
 							Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
 							continue;
 						}
-                        catch(Exception e)
+                        catch(Exception)
                         {
                             Console.WriteLine("Exception while reading from socket {0}", this.Endpoint);
                             break;
                         }
                         if (numberOfBytesRead <= 0)
                         {
-                            Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, tcpClient.Client.RemoteEndPoint.ToString());
+                            Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, tcpClient.RemoteEndPoint.ToString());
                             break;
                         }
 
-						Console.WriteLine("Message (length={1}) received from: {0} at {2}", tcpClient.Client.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
+						Console.WriteLine("Message (length={1}) received from: {0} at {2}", tcpClient.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
 
 						byte[] readBytes = readBuffer.Take(numberOfBytesRead).ToArray();
 
@@ -93,7 +93,7 @@ namespace iContrAll.TcpServer
 							// TODO: delete next line, it's just for debugging
 							Console.WriteLine("Response message: " + Encoding.UTF8.GetString(result));
 							// Reply to request
-							clientStream.Write(result, 0, result.Length);
+                            tcpClient.Write(result); // clientStream.Write(result, 0, result.Length);
 						}
                         //Console.WriteLine("Radio osztaly letezik ProcessMessage foreach utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
                         //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
@@ -102,8 +102,8 @@ namespace iContrAll.TcpServer
 			}
 			finally
 			{
-				clientStream.Close();
-				tcpClient.Close();
+
+                tcpClient.Close(); // including clientStream.Close();
 
                 Console.WriteLine("TcpClient zár");
 
@@ -121,7 +121,8 @@ namespace iContrAll.TcpServer
             try
             {
                 asyncEvent.Completed += OnMessageSendCompleted;
-                tcpClient.Client.SendAsync(asyncEvent);
+                // tcpClient.Write(asyncEvent.Buffer);
+                tcpClient.SendAsync(asyncEvent);
             }
             catch (Exception ex)
             {
@@ -139,9 +140,7 @@ namespace iContrAll.TcpServer
                 Console.WriteLine(Endpoint.ToString() + " is disconnected.");
                 if (RemoveClient != null)
                     RemoveClient(Endpoint);
-
             }
-
         }
 
 		//byte[] trailingBuffer;
@@ -333,13 +332,13 @@ namespace iContrAll.TcpServer
 
                         Console.WriteLine("Response to QueryMessageHistory: " + responseMsg);
                         byte[] bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(responseMsg));
-                        foreach (var b in bytesToSend)
-                        {
-                            Console.Write(b + "|");
-                        }
-                        Console.WriteLine();
+                        //foreach (var b in bytesToSend)
+                        //{
+                        //    Console.Write(b + "|");
+                        //}
+                        //Console.WriteLine();
 
-                        tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
+                        tcpClient.Write(bytesToSend);
                     }
                 }
             }
