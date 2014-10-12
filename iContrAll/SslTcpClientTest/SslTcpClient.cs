@@ -12,8 +12,6 @@ namespace SslTcpClientTest
 {
     public class SslTcpClient 
     {   
-        private static Hashtable certificateErrors = new Hashtable();
-
         // The following method is invoked by the RemoteCertificateValidationDelegate. 
         public static bool ValidateServerCertificate(
               object sender,
@@ -27,6 +25,7 @@ namespace SslTcpClientTest
             Console.WriteLine("Certificate error: {0}", sslPolicyErrors);
 
             // Do not allow this client to communicate with unauthenticated servers. 
+            // return false;
             return true;
         }
 
@@ -43,7 +42,7 @@ namespace SslTcpClientTest
         {
             // Create a TCP/IP client socket. 
             // machineName is the host running the server application.
-            TcpClient client = new TcpClient(machineName,1124);
+            TcpClient client = new TcpClient(machineName,1123);
             Console.WriteLine("Client connected.");
             // Create an SSL stream that will close the client's stream.
             SslStream sslStream = new SslStream(
