@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Security;
@@ -49,10 +50,11 @@ namespace iContrAll.RemoteServer
                 // Application blocks while waiting for an incoming connection. 
                 // Type CNTL-C to terminate the server.
                 TcpClient client = clientListener.AcceptTcpClient();
-                
+
+                Console.WriteLine("Client connected");
+
                 var handleClientThread = new Thread(HandleClient);
                 handleClientThread.Start(client);
-                
             }
         }
 
@@ -77,6 +79,7 @@ namespace iContrAll.RemoteServer
         static void HandleRaspberry(object clientParam)
         {
             TcpClient client = (TcpClient)clientParam;
+            Console.WriteLine("HandleRaspberry {0}", client.Client.RemoteEndPoint.ToString());
             // A client has connected. Create the SslStream using the client's network stream.
             SslStream sslStream = new SslStream(client.GetStream(), false);
             // Authenticate the server but don't require the client to authenticate. 
@@ -84,25 +87,25 @@ namespace iContrAll.RemoteServer
             {
                 Console.WriteLine("Authentication started");
                 sslStream.AuthenticateAsServer(serverCertificate,
-                    false, SslProtocols.Tls, true);
-
+                    true, SslProtocols.Tls, true);
+                Console.WriteLine("Raspberry Authentication COMPLETE {0} at {1}", client.Client.RemoteEndPoint.ToString(), DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
                 // Set timeouts for the read and write to 5 seconds.
-                sslStream.ReadTimeout = 5000;
-                sslStream.WriteTimeout = 5000;
+                //sslStream.ReadTimeout = 5000;
+                //sslStream.WriteTimeout = 5000;
                 // Read a message from the client.   
                 Console.WriteLine("Waiting for raspberry message...");
 
-                byte[] buffer = new byte[2048];
+                byte[] buffer = new byte[32768];
                 int numberOfBytesRead = -1;
 
                 while (true)
                 {
+                    bool breakIt = false;
                     try
                     {
                         // Read the client's test message.
                         numberOfBytesRead = sslStream.Read(buffer, 0, buffer.Length);
                     }
-
                     catch (ArgumentOutOfRangeException)
                     {
                         Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
@@ -110,7 +113,7 @@ namespace iContrAll.RemoteServer
                     }
                     catch (Exception)
                     {
-                        Console.WriteLine("Exception while reading from socket");// {0}");//, sslStream..Endpoint);
+                        Console.WriteLine("Exception while reading from socket SslTcpServer.HandleRaspberry");// {0}");//, sslStream..Endpoint);
                         break;
                     }
 
@@ -121,28 +124,61 @@ namespace iContrAll.RemoteServer
                         break;
                     }
 
-                    Console.WriteLine("Message (length={1}) received from: {0} at {2}");//, tcpClient.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
+                    Console.WriteLine("Message (length={1}) received from: {0} at {2}", client.Client.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
 
                     byte[] readBytes = buffer.Take(numberOfBytesRead).ToArray();
                     foreach (var message in ProcessBuffer(readBytes))
                     {
+                        Console.WriteLine("Message: Type={0}: {1}", (MessageType)message.Type, message.Content);
                         if (message.Type == MessageType.IdentityMsg && message.Length == 10)
                         {
-                            RaspberryHandler rh = new RaspberryHandler() { Id = message.Content, SslStream = sslStream };
+                            RaspberryHandler rh = new RaspberryHandler() { Id = message.Content, SslStream = sslStream, TcpChannel = client };
                             lock (listSyncObject)
                             {
-                                raspberryList.Add(rh);
+                                List<RaspberryHandler> sameRaspberries = raspberryList.Where(r => r.Id == rh.Id).ToList();
+                                //int rc = raspberryList.Count(r => r.Id == rh.Id);
+                                int rc = sameRaspberries.Count;
+                                if (rc <= 0)
+                                {
+                                    raspberryList.Add(rh);
+                                }
+                                else
+                                {
+                                    if (rc == 1)
+                                    {
+                                        RaspberryHandler rhOld = sameRaspberries.First();
+                                        rhOld.Close();
+
+                                        rhOld.Id = rh.Id;
+                                        rhOld.SslStream = sslStream;
+                                        rhOld.TcpChannel = client;
+                                    }
+                                }
                             }
                         }
                         else
                             if (message.Type == MessageType.CreateThreadFor)
                             {
-
+                                Console.WriteLine("CreateTunnelFor request from {0}", client.Client.RemoteEndPoint.ToString());
+                                lock(listSyncObject)
+                                {
+                                    List<ClientHandler> chandlers = clientList.Where(ch => ch.Identifier == message.Content).ToList();
+                                    
+                                    if (chandlers.Count == 1)
+                                    {
+                                        Tunnel t = new Tunnel(sslStream, chandlers.First());
+                                        breakIt = true;
+                                        break;
+                                    }
+                                    //foreach (var ch in chandlers)
+                                    //{
+                                    //    Tunnel t = new Tunnel(sslStream, ch);
+                                    //}
+                                    
+                                }
                             }
-
-
                     }
-
+                    if (breakIt) break;
                 }
 
             }
@@ -163,33 +199,90 @@ namespace iContrAll.RemoteServer
                 // The client stream will be closed with the sslStream 
                 // because we specified this behavior when creating 
                 // the sslStream.
-                sslStream.Close();
-                client.Close();
+                //sslStream.Close();
+                //client.Close();
             }
         }
 
         static void HandleClient(object clientParam)
         {
             TcpClient client = (TcpClient)clientParam;
+            Console.WriteLine("HandleClient {0} started at {1}", client.Client.RemoteEndPoint.ToString(), DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
             // A client has connected. Create the  
             // SslStream using the client's network stream.
-            SslStream sslStream = new SslStream(
-                client.GetStream(), false);
+            SslStream sslStream = new SslStream(client.GetStream(), false);
             // Authenticate the server but don't require the client to authenticate. 
             try
             {
-                sslStream.AuthenticateAsServer(serverCertificate,
-                    false, SslProtocols.Tls, true);
+                Console.WriteLine("Authentication STARTED at {0}", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
+                sslStream.AuthenticateAsServer(serverCertificate, true, SslProtocols.Ssl3, true);
 
                 // Set timeouts for the read and write to 5 seconds.
-                sslStream.ReadTimeout = 5000;
-                sslStream.WriteTimeout = 5000;
+                //sslStream.ReadTimeout = 5000;
+                //sslStream.WriteTimeout = 5000;
                 // Read a message from the client.   
-                Console.WriteLine("Waiting for client message...");
+                Console.WriteLine("Authentication COMPLETED at {0}", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
+                int numberOfBytesRead = -1;
 
-                string messageData = ReadMessage(sslStream);
-                Console.WriteLine("Received: {0}", messageData);
+                byte[] buffer = new byte[32768];
 
+                while (true)
+                {
+                    numberOfBytesRead = sslStream.Read(buffer, 0, buffer.Length);
+                    if (numberOfBytesRead<=0)
+                    {
+                        Console.WriteLine("Client closed the socket {0}", client.Client.RemoteEndPoint);
+                        break;
+                    }
+                    Console.WriteLine("ReadBuffer content: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
+
+                    List<Message> messageBuffer = ProcessBuffer(buffer.Take(numberOfBytesRead).ToArray());
+                    Console.WriteLine("MessageBuffer.Count = {0}", messageBuffer.Count);
+
+                    bool breakIt = false;
+
+                    for (int i = 0; i < messageBuffer.Count; i++)
+                    {
+                        var m = messageBuffer[i];
+                        Console.WriteLine("MessageType: " + m.Type + " Content: " + m.Content);
+                        if (m.Type == MessageType.IdentityMsg && m.Content.Length == 10)
+                        {
+                            lock (listSyncObject)
+                            {
+                                var rh = raspberryList.Where(r => r.Id == m.Content);
+                                if (rh.Count() == 1)
+                                {
+                                    // Kérés a raspberry-hez, hogy indítson új csatornát amin aztán ezzel a klienssel fog kommunikálni.
+                                    rh.First().SendCreateTunnelFor(client.Client.RemoteEndPoint.ToString());
+
+                                    ClientHandler ch = new ClientHandler() { TcpChannel = client, SslStream = sslStream, Identifier = client.Client.RemoteEndPoint.ToString() };
+
+                                    List<Message> tempMsgs = new List<Message>();
+                                    for (int j = i + 1; j < messageBuffer.Count; j++)
+                                    {
+                                        tempMsgs.Add(messageBuffer[j]);
+                                    }
+
+                                    ch.MessageBuffer = tempMsgs;
+
+                                    clientList.Add(ch);
+
+                                    breakIt = true;
+                                    break;
+                                }
+                            }
+
+                            // TODO: ask for creating thread, save this client
+                            // TODO: vigyük a maradék üzeneteket át, kell a bejelentkezéshez!
+                            // ClientHandler ch = new ClientHandler() { TcpChannel = client, SslStream = sslStream };
+
+
+                        }
+                    }
+
+                    if (breakIt)
+                        break;
+                }
             }
             catch (AuthenticationException e)
             {
@@ -203,6 +296,15 @@ namespace iContrAll.RemoteServer
                 client.Close();
                 return;
             }
+                catch (Exception e)
+            {
+                Console.WriteLine("Exception: {0}", e.Message);
+                if (e.InnerException != null)
+                {
+                    Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                }
+                Console.WriteLine("Exception while trying to make some effort to get the raspberry {0}", client.Client.RemoteEndPoint.ToString());
+            }
             finally
             {
                 //// The client stream will be closed with the sslStream 
@@ -212,8 +314,6 @@ namespace iContrAll.RemoteServer
                 //client.Close();
             }
         }
-
-        
 
         private static List<Message> ProcessBuffer(byte[] readBuffer)
         {
@@ -255,7 +355,7 @@ namespace iContrAll.RemoteServer
                 if (!exists)
                 {
 
-                    Console.WriteLine("Gyanus!");
+                    Console.WriteLine("Gyanus! MessageType: {0}", messageType);
                     break;
 
                     //if (completeBuffer.Length > 4)
@@ -328,7 +428,7 @@ namespace iContrAll.RemoteServer
                     break;
                 }
 
-                Console.WriteLine("Message (length={1}) received from: {0} at {2}");//, tcpClient.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
+                Console.WriteLine("Message (length={1}) received from: {0} at {2}", "valamisiphone", numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
 
                 byte[] readBytes = buffer.Take(numberOfBytesRead).ToArray();
 

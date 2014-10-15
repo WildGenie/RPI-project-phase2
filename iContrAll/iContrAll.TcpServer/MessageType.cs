@@ -8,7 +8,7 @@ namespace iContrAll.TcpServer
 {
     public enum MessageType
     {
-        CreateThreadFor = -2,
+        CreateThreadFor = 63,
         IdentityMsg = -1,
         DebugMsg = 0,
         RadioMsg = 1,

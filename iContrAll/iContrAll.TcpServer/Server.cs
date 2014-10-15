@@ -83,7 +83,6 @@ namespace iContrAll.TcpServer
             Console.WriteLine();
 
 
-            // 2 csatornás lámpavezérlőre felkészítve
             if (senderId.StartsWith("LC1"))
             {
                 int chCount = 4;
@@ -112,30 +111,62 @@ namespace iContrAll.TcpServer
 
                     string state = "chs" + (i + 1) + "=" + (states[i].Equals('1') ? '1' : '0');
                     responseMsg += state;
-                    //stateMsg += states[i].Equals('1') ? '1' : '0';
-                    //Console.WriteLine("Broadcast : " + stateMsg);
-                    //SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(stateMsg)));
                     
-                    //string dimMsg = senderId + targetId + "60" + ;
                     string dimm = "chd" + (i + 1) + "=" + ((dimValues[i] / 100) % 10).ToString() + ((dimValues[i] / 10) % 10).ToString() + (dimValues[i] % 10).ToString();
-                    //dimMsg += dimm;
-                    //Console.WriteLine("Broadcast : " + dimMsg);
-                    //SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(dimMsg)));
+                    
                     responseMsg += "&" + dimm;
 
-                    //string powerMsg = senderId + targetId + "60" + "chi" + (i + 1) + "=";
                     string power = "chi" + (i + 1) + "="+((powerValues[i] / 100) % 10).ToString() + ((powerValues[i] / 10) % 10).ToString() + (powerValues[i] % 10).ToString();
-                    //powerMsg += power;
-                    //Console.WriteLine("Broadcast : " + powerMsg);
 
                     responseMsg += "&" + power;
-                    //SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(powerMsg)));
                 }
                 Console.WriteLine("SendToAllClient: " + responseMsg);
                 SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(responseMsg)));
                 
             }
-            else Console.WriteLine("Nemjött be!");
+            else
+            // redőny
+            if (senderId.StartsWith("OC1"))
+            {
+                int chCount = 2;
+
+                string states = Encoding.UTF8.GetString(receivedBytes.Skip(19).Take(chCount).ToArray());
+
+                Console.WriteLine(senderId + "=>" + targetId + ":" + states);
+
+                byte[] dimValues = receivedBytes.Skip(19 + chCount).Take(chCount).ToArray();
+                byte[] powerValues = new byte[] { 0, 0, 0, 0 }; // receivedBytes.Skip(19 + 2 * chCount).Take(chCount).ToArray();
+
+                using (var dal = new DataAccesLayer())
+                {
+                    for (int i = 0; i < chCount; i++)
+                    {
+                        dal.UpdateDeviceStatus(senderId, i + 1, states[i].Equals('1'), dimValues[i], powerValues[i]);
+                    }
+                }
+
+                string responseMsg = senderId + targetId + "50";
+
+                for (int i = 0; i < chCount; i++)
+                {
+                    // összefűzés
+                    if (i != 0) responseMsg += '&';
+
+                    string state = "chs" + (i + 1) + "=" + (states[i].Equals('1') ? '1' : '0');
+                    responseMsg += state;
+
+                    string dimm = "chd" + (i + 1) + "=" + ((dimValues[i] / 100) % 10).ToString() + ((dimValues[i] / 10) % 10).ToString() + (dimValues[i] % 10).ToString();
+
+                    responseMsg += "&" + dimm;
+
+                    //string power = "chi" + (i + 1) + "=" + ((powerValues[i] / 100) % 10).ToString() + ((powerValues[i] / 10) % 10).ToString() + (powerValues[i] % 10).ToString();
+
+                    //responseMsg += "&" + power;
+                }
+
+                Console.WriteLine("SendToAllClient: " + responseMsg);
+                SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(responseMsg)));
+            }
         }
 
         private byte[] BuildMessage(int msgNumber, byte[] message)
@@ -242,9 +273,13 @@ namespace iContrAll.TcpServer
                             Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
                             continue;
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            Console.WriteLine("Exception while reading from socket {0}", this.remoteServer.Client.RemoteEndPoint);
+                            Console.WriteLine("Exception while reading from socket {0} in Server.RemoteServerManaging", this.remoteServer.Client.RemoteEndPoint);
+                            Console.WriteLine(ex.Message);
+                            if (ex.InnerException!=null)
+                            { Console.WriteLine(ex.InnerException.Message); }
+
                             break;
                         }
 
@@ -313,8 +348,8 @@ namespace iContrAll.TcpServer
 				if (!exists)
 				{
 					
-					Console.WriteLine("Gyanus!");
-					break;
+					Console.WriteLine("Gyanus! {0}", messageType);
+                    break;
 					
 					//if (completeBuffer.Length > 4)
 					//{
@@ -365,7 +400,7 @@ namespace iContrAll.TcpServer
 			if (m.Type == MessageType.CreateThreadFor)
             {
                 TcpClient remoteConnection = new TcpClient(remoteServerAddress, remoteServerPort);
-                Console.WriteLine("Connected to remoteserver");
+                
                 var sslStreamForClient = new SslStream(
                     remoteConnection.GetStream(),
                     false,
@@ -384,6 +419,8 @@ namespace iContrAll.TcpServer
                         certs,
                         SslProtocols.Tls,
                         false); // check cert revokation);
+
+                    Console.WriteLine("Connected and authenticated to remoteserver to communicate with {0}", message);
                 }
                 catch (AuthenticationException e)
                 {
@@ -399,7 +436,7 @@ namespace iContrAll.TcpServer
 
                 // Signing that this is the thread for the remote device communication
                 byte[] messageContent = Encoding.UTF8.GetBytes(message);
-                byte[] data = BuildMessage(-3, messageContent);
+                byte[] data = BuildMessage((int)MessageType.CreateThreadFor, messageContent);
 
                 sslStreamForClient.Write(data, 0, data.Length);
                 sslStreamForClient.Flush();

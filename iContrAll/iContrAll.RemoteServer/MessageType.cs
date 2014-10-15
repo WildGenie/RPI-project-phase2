@@ -7,9 +7,10 @@ namespace iContrAll.RemoteServer
 {
     public enum MessageType
     {
+        LoginRequest = 14,
         IdentityMsg = -1,
-        CreateThreadFor = -2,
-        Ping = -3
+        CreateThreadFor = 63,
+        Ping = 251
     }
 
     public class Message

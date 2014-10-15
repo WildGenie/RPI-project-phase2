@@ -69,7 +69,7 @@ namespace iContrAll.TcpServer
 						}
                         catch(Exception)
                         {
-                            Console.WriteLine("Exception while reading from socket {0}", this.Endpoint);
+                            Console.WriteLine("Exception while reading from socket {0} in ServiceHandler.HandleMessages", this.Endpoint);
                             break;
                         }
                         if (numberOfBytesRead <= 0)
@@ -81,9 +81,19 @@ namespace iContrAll.TcpServer
 						Console.WriteLine("Message (length={1}) received from: {0} at {2}", tcpClient.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
 
 						byte[] readBytes = readBuffer.Take(numberOfBytesRead).ToArray();
-
+                        Console.WriteLine("ReadBytes:");
+                        for (int i = 0; i < readBytes.Length; i++)
+                        {
+                            Console.Write(readBytes[i]+"|");
+                        }
 						foreach (var message in ProcessBuffer(readBytes))
 						{
+                            Console.WriteLine("Message.Content: {0}", message.Content);
+                            if (clientState != ClientState.LoginOK && message.Type != MessageType.LoginRequest)
+                            {
+                                Console.WriteLine("Nem login");
+                                continue;
+                            }
 							var result = ProcessMessage(message);
                             //Console.WriteLine("Radio osztaly letezik ProcessMessage utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
                             //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
@@ -143,25 +153,30 @@ namespace iContrAll.TcpServer
             }
         }
 
-		//byte[] trailingBuffer;
+		byte[] trailingBuffer;
 		private List<Message> ProcessBuffer(byte[] readBuffer)
 		{
 			var returnList = new List<Message>();
 			
 			// felfűzzük az elejére a maradékot
 			byte[] completeBuffer;
-			//if (trailingBuffer.Length > 0)
-			//{
-			//    completeBuffer = new byte[trailingBuffer.Length + readBuffer.Length];
-			//    Array.Copy(trailingBuffer, completeBuffer, trailingBuffer.Length);
-			//    Array.Copy(readBuffer, 0, completeBuffer, trailingBuffer.Length, readBuffer.Length);
-			//}
-			//else 
-			completeBuffer = readBuffer;
+            if (trailingBuffer!=null && trailingBuffer.Length > 0)
+            {
+                completeBuffer = new byte[trailingBuffer.Length + readBuffer.Length];
+                Array.Copy(trailingBuffer, completeBuffer, trailingBuffer.Length);
+                Array.Copy(readBuffer, 0, completeBuffer, trailingBuffer.Length, readBuffer.Length);
+                trailingBuffer = null;
+            }
+            else 
+			    completeBuffer = readBuffer;
 
 			while (completeBuffer.Length > 0)
 			{
-				if (completeBuffer.Length<4) break;
+                if (completeBuffer.Length < 4)
+                {
+                    trailingBuffer = completeBuffer;
+                    break;
+                }
 
 				byte[] messageTypeArray = new byte[4];
 				Array.Copy(completeBuffer, messageTypeArray, 4);
@@ -169,10 +184,11 @@ namespace iContrAll.TcpServer
 				int messageType = BitConverter.ToInt32(messageTypeArray, 0);
 
 				// Console.WriteLine(clientState.ToString());
-				if (clientState != ClientState.LoginOK && messageType != (byte)MessageType.LoginRequest)
-				{
-					return returnList;
-				}
+                //if (clientState != ClientState.LoginOK && messageType != (byte)MessageType.LoginRequest)
+                //{
+                //    Console.WriteLine("Ez segg, nem login jött, haha!");
+                //    return returnList;
+                //}
 
 				bool exists = false;
 
@@ -189,7 +205,7 @@ namespace iContrAll.TcpServer
 				if (!exists)
 				{
 					
-					Console.WriteLine("Gyanus!");
+					Console.WriteLine("Gyanus! {0}", messageType);
 					break;
 					
 					//if (completeBuffer.Length > 4)
@@ -310,6 +326,7 @@ namespace iContrAll.TcpServer
                 var statuses = dal.GetDeviceStatus(message);
                 if (statuses.Count() > 0)
                 {
+                    // lámpa
                     if (message.StartsWith("LC1"))
                     {
                         int i = 0;
@@ -327,6 +344,40 @@ namespace iContrAll.TcpServer
                             string power = "chi" + s.DeviceChannel + "=" + ((s.Power / 100) % 10).ToString() + ((s.Power / 10) % 10).ToString() + (s.Power % 10).ToString();
                             
                             responseMsg += "&" + power;
+                            //tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
+                        }
+
+                        Console.WriteLine("Response to QueryMessageHistory: " + responseMsg);
+                        byte[] bytesToSend = BuildMessage(1, Encoding.UTF8.GetBytes(responseMsg));
+                        //foreach (var b in bytesToSend)
+                        //{
+                        //    Console.Write(b + "|");
+                        //}
+                        //Console.WriteLine();
+
+                        tcpClient.Write(bytesToSend);
+                    }
+                    else 
+                    // redőny
+                    if (message.StartsWith("OC1"))
+                    {
+                        int i = 0;
+
+                        // TAG?
+                        string responseMsg = message + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "50";
+
+                        foreach (var s in statuses)
+                        {
+                            if (i != 0) { responseMsg += "&"; i = 1; }
+                            // responseMsg += "chs" + s.DeviceChannel + "=" + (s.State ? '1' : '0');
+
+                            string dimm = "chd" + s.DeviceChannel + "=" + ((s.Value / 100) % 10).ToString() + ((s.Value / 10) % 10).ToString() + (s.Value % 10).ToString();
+
+                            responseMsg += "&" + dimm;
+
+                            // string power = "chi" + s.DeviceChannel + "=" + ((s.Power / 100) % 10).ToString() + ((s.Power / 10) % 10).ToString() + (s.Power % 10).ToString();
+
+                            // responseMsg += "&" + power;
                             //tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
                         }
 
@@ -455,11 +506,11 @@ namespace iContrAll.TcpServer
                         Array.Copy(basicBytes, retBytes, basicBytes.Length);
                         Array.Copy(dimValues, 0, retBytes, basicBytes.Length, 4);
 
-                        for (int i = 0; i < retBytes.Length; i++)
-                        {
-                            Console.Write(retBytes[i]);
-                        }
-                        Console.WriteLine();
+                        //for (int i = 0; i < retBytes.Length; i++)
+                        //{
+                        //    Console.Write(retBytes[i]);
+                        //}
+                        //Console.WriteLine();
 
                         Radio.Instance.SendMessage(retBytes);
 
@@ -504,6 +555,9 @@ namespace iContrAll.TcpServer
             else
             if (targetIdInMsg.StartsWith("OC1"))
             {
+
+
+
                 int eqPos = command.IndexOf('=');
 
                 if (eqPos == 4)
@@ -612,6 +666,7 @@ namespace iContrAll.TcpServer
 
 		private byte[] CreateLoginResponse(string message)
 		{
+            Console.WriteLine("CreateLoginResponse: {0} Itt mi lehet a szar???", message);
 			string login = "";
 			string password = "";
 
@@ -645,7 +700,7 @@ namespace iContrAll.TcpServer
 			}
 			catch(Exception)
 			{
-				Console.WriteLine("Error in Xml parsing.");
+				Console.WriteLine("Error in Xml parsing in message: {0}.", message);
 				return null;
 			}
 

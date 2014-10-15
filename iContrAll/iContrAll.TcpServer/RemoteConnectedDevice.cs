@@ -25,6 +25,9 @@ namespace iContrAll.TcpServer
         {
             this.tcpClient = client;
             this.sslStream = sslStream;
+            string ip = remoteEndPoint.Substring(0, remoteEndPoint.IndexOf(':'));
+            int port = int.Parse(remoteEndPoint.Substring(remoteEndPoint.IndexOf(':')+1));
+            this.RemoteEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
             // this.RemoteEndPoint = client.Client.RemoteEndPoint;
         }
 
@@ -36,6 +39,7 @@ namespace iContrAll.TcpServer
 
         public void Write(byte[] result)
         {
+            Console.WriteLine("Sent to remote connection: {0}", Encoding.UTF8.GetString(result));
             this.sslStream.Write(result, 0, result.Length);
         }
         public void SendAsync(SocketAsyncEventArgs asyncEventArgs)
