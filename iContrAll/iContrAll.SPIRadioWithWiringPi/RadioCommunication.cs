@@ -230,6 +230,11 @@ namespace iContrAll.SPIRadio
                 if (Volatile.Read(ref state) == (byte)RadioState.Receive)
                 {
                     Console.WriteLine("packet received");
+                    if (ReadCRCError())
+                    {
+                        Console.WriteLine("de CRC hiba");
+                        return;
+                    }
                     Read_Rx_Fifo(RadioConstants.P);
                     Clear_Int_Flags(RadioConstants.P);
                     RX_Command(RadioConstants.P);
@@ -408,6 +413,32 @@ namespace iContrAll.SPIRadio
             }
             CTS();
             // Console.WriteLine("TX_Command: CTS()");
+        }
+
+        unsafe bool ReadCRCError()
+        {
+            byte t;
+
+            byte[] toRFChip = new byte[9];
+            toRFChip[0] = RadioConstants.CMD_GET_INT_STATUS;
+            toRFChip[1] = 0x00;
+            fixed (byte* pToRFChip = toRFChip)
+            {
+                SPI.wiringPiSPIDataRW(0, pToRFChip, 2);
+            }
+            toRFChip[0] = RadioConstants.CMD_CTS_READ;
+            toRFChip[1] = 0x00;
+            toRFChip[2] = 0x00;
+            toRFChip[3] = 0x00;
+            toRFChip[4] = 0x00;
+            toRFChip[5] = 0x00;
+            fixed (byte* pToRFChip = toRFChip)
+            {
+                SPI.wiringPiSPIDataRW(0, pToRFChip, 9);
+                t = pToRFChip[5];
+            }
+           
+            return (t & 0x08)>0;
         }
     }
 }
