@@ -512,8 +512,18 @@ namespace iContrAll.TcpServer
                 }
                 catch (SocketException e)
                 {
-                    Console.WriteLine("SocketException: {0}", e);
+                    // Console.WriteLine("SocketException: {0}", e);
+                    Console.WriteLine("SocketException: Cannot connect to remote server.");
                     Thread.Sleep(5000);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Exception in ConnectToRemoteServer():");
+                    Console.WriteLine(e.Message);
+                    if (e.InnerException!=null)
+                    {
+                        Console.WriteLine(e.InnerException.Message);
+                    }
                 }
             }
         }

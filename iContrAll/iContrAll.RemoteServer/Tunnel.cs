@@ -68,9 +68,14 @@ namespace iContrAll.RemoteServer
                     Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
                     continue;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     Console.WriteLine("Exception while reading from socket Tunnel.ListenForClientMessages");// {0}");//, sslStream..Endpoint);
+                    Console.WriteLine("Exception: {0}", e.Message);
+                    if (e.InnerException != null)
+                    {
+                        Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                    }
                     break;
                 }
 
@@ -81,16 +86,24 @@ namespace iContrAll.RemoteServer
                     break;
                 }
 
-                //try
-                //{
+                try
+                {
                     Rasberry.Write(buffer, 0, numberOfBytesRead);
                     Console.WriteLine("SentToRaspberry: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
-                //}
-                //catch(Exception)
-                //{
-                //    break;
-                //}
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("");
+                    Console.WriteLine("Exception at Rasberry.Write() in Tunnel.ListenForClientMessages(): {0}", e.Message);
+                    if (e.InnerException != null)
+                    {
+                        Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                    }
+                    break;
+                }
             }
+
+
             
         }
 
