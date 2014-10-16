@@ -38,3 +38,15 @@ obj/
 [Rr]elease*/
 !iContrAll.Executables/iContrAll.TcpServer.exe
 !iContrAll.Executables_profil/iContrAll.TcpServer.exe
+
+# Visual C++ cache files
+ipch/
+*.aps
+*.ncb
+*.opensdf
+*.sdf
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
