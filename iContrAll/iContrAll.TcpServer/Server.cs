@@ -306,6 +306,9 @@ namespace iContrAll.TcpServer
                 sslStream.Close(); // including clientStream.Close();
                 remoteServer.Close();
                 Console.WriteLine("RemoteServer zár");
+
+                Thread.Sleep(5000);
+                RemoteServerManaging();
             }
         }
 
@@ -456,59 +459,62 @@ namespace iContrAll.TcpServer
 
         private bool ConnectToRemoteServer()
         {
-            try
+            while (true)
             {
-                this.remoteServer = new TcpClient(remoteServerAddress, remoteServerPort);
-                Console.WriteLine("Connected to remoteserver");
-                this.sslStream = new SslStream(
-                    remoteServer.GetStream(),
-                    false,
-                    new RemoteCertificateValidationCallback(ValidateServerCertificate),
-                    new LocalCertificateSelectionCallback(CertificateSelectionCallback)
-                );
-
-                X509Certificate cert = new X509Certificate2(certificatePath, certificatePassphrase); //"/home/pi/SslClientTest2/bin/Debug/server.p12", "allcontri");
-                X509CertificateCollection certs = new X509CertificateCollection();
-                certs.Add(cert);
-
-                // The server name must match the name on the server certificate. 
                 try
                 {
-                    sslStream.AuthenticateAsClient(serverCertificateName,
-                        certs,
-                        SslProtocols.Tls,
-                        false); // check cert revokation);
-                }
-                catch (AuthenticationException e)
-                {
-                    Console.WriteLine("Exception: {0}", e.Message);
-                    if (e.InnerException != null)
+                    this.remoteServer = new TcpClient(remoteServerAddress, remoteServerPort);
+                    Console.WriteLine("Connected to remoteserver");
+                    this.sslStream = new SslStream(
+                        remoteServer.GetStream(),
+                        false,
+                        new RemoteCertificateValidationCallback(ValidateServerCertificate),
+                        new LocalCertificateSelectionCallback(CertificateSelectionCallback)
+                    );
+
+                    X509Certificate cert = new X509Certificate2(certificatePath, certificatePassphrase); //"/home/pi/SslClientTest2/bin/Debug/server.p12", "allcontri");
+                    X509CertificateCollection certs = new X509CertificateCollection();
+                    certs.Add(cert);
+
+                    // The server name must match the name on the server certificate. 
+                    try
                     {
-                        Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                        sslStream.AuthenticateAsClient(serverCertificateName,
+                            certs,
+                            SslProtocols.Tls,
+                            false); // check cert revokation);
                     }
-                    Console.WriteLine("Authentication failed - closing the connection.");
-                    remoteServer.Close();
-                    return false;
+                    catch (AuthenticationException e)
+                    {
+                        Console.WriteLine("Exception: {0}", e.Message);
+                        if (e.InnerException != null)
+                        {
+                            Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                        }
+                        Console.WriteLine("Authentication failed - closing the connection.");
+                        remoteServer.Close();
+                        return false;
+                    }
+
+                    // Sending the device id to the server inside the login message
+                    byte[] message = Encoding.UTF8.GetBytes(System.Configuration.ConfigurationManager.AppSettings["loginid"]);
+                    byte[] data = BuildMessage(-1, message);
+                    //NetworkStream stream = remoteServer.GetStream();
+                    sslStream.Write(data, 0, data.Length);
+                    sslStream.Flush();
+
+                    return true;
                 }
-
-                // Sending the device id to the server inside the login message
-                byte[] message = Encoding.UTF8.GetBytes(System.Configuration.ConfigurationManager.AppSettings["loginid"]);
-                byte[] data = BuildMessage(-1, message);
-                //NetworkStream stream = remoteServer.GetStream();
-                sslStream.Write(data, 0, data.Length);
-                sslStream.Flush();
-
-                return true;
-            }
-            catch (ArgumentNullException e)
-            {
-                Console.WriteLine("ArgumentNullException: {0}", e);
-                return false;
-            }
-            catch (SocketException e)
-            {
-                Console.WriteLine("SocketException: {0}", e);
-                return false;
+                catch (ArgumentNullException e)
+                {
+                    Console.WriteLine("ArgumentNullException: {0}", e);
+                    Thread.Sleep(5000);
+                }
+                catch (SocketException e)
+                {
+                    Console.WriteLine("SocketException: {0}", e);
+                    Thread.Sleep(5000);
+                }
             }
         }
 
