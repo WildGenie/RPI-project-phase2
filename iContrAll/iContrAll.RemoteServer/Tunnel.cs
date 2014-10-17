@@ -82,8 +82,7 @@ namespace iContrAll.RemoteServer
                 if (numberOfBytesRead <= 0)
                 {
                     //Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, tcpClient.RemoteEndPoint.ToString());
-                    // Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);//, tcpClient.RemoteEndPoint.ToString());
-                    Console.WriteLine("Client closed connection: {0}", Client.Identifier);//, tcpClient.RemoteEndPoint.ToString());
+                    Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);//, tcpClient.RemoteEndPoint.ToString());
                     break;
                 }
 
