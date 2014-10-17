@@ -23,8 +23,7 @@
 // MOD_type: 2    Rsymb(sps): 10000    Fdev(Hz): 2500    RXBW(Hz): 150000    Manchester: 0    AFC_en: 1    Rsymb_error: 0.0    Chip-Version: 2    
 // RF Freq.(MHz): 869.5    API_TC: 29    fhst: 250000    inputBW: 0    BERT: 0    RAW_dout: 0    D_source: 0    Hi_pfm_div: 1    
 // 
-// # WB filter 1 (BW =  76.31 kHz);  NB-filter 1 (BW = 76.31 kHz) 
-// 
+// # WB filter 1 (BW =  76.31 kHz);  NB-filter 1 (BW = 76.31 kHz) // 
 // Modulation index: 0
 */
 
@@ -178,7 +177,7 @@
 //   PKT_FIELD_2_LENGTH_7_0 - Unsigned 13-bit Field 2 length value.
 //   PKT_FIELD_2_CONFIG - General data processing and packet configuration bits for Field 2.
 */
-#define RF_PKT_LEN_12 0x11, 0x12, 0x0C, 0x08, 0x00, 0x00, 0x00, 0x30, 0x30, 0x00, 0x40, 0x04, 0x8A, 0x00, 0x00, 0x00
+#define RF_PKT_LEN_12 0x11, 0x12, 0x0C, 0x08, 0x00, 0x00, 0x00, 0x30, 0x30, 0x00, 0x40, 0x04, 0xAA, 0x00, 0x00, 0x00
 
 /*
 // Set properties:           RF_PKT_FIELD_2_CRC_CONFIG_12
