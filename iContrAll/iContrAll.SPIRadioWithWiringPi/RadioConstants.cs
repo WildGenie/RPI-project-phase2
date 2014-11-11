@@ -102,8 +102,12 @@ namespace iContrAll.SPIRadio
         public const int DD = 100;
         public const int FIX_PACKET_LENGTH = 64;
         public const int P = 0;
-        public const int TXRX = 1;
-        public const int PWDN = 4;
-        public const int INT = 6;
+        //public const int TXRX = 1;
+        //public const int PWDN = 4;
+        //public const int INT = 6;
+        // raspberrymodb+
+        public const int INT = 2;
+        public const int PWDN = 7;
+        public const int CS = 10;
     }
 }
