@@ -1,15 +1,15 @@
 ﻿using iContrAll.SPIRadio;
 using System;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
-using System.Linq;
-using System.Text;
 using System.Collections.Generic;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
-using System.Security.Authentication;
 using System.Globalization;
+using System.Linq;
+using System.Net;
+using System.Net.Security;
+using System.Net.Sockets;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Threading;
 
 namespace iContrAll.TcpServer
 {
@@ -39,16 +39,16 @@ namespace iContrAll.TcpServer
             this.certificatePassphrase = certificatePassphrase;
             this.certificatePath = certificatePath;
 
-			Radio.Instance.RadioMessageReveived += ProcessReceivedRadioMessage;
+            Radio.Instance.RadioMessageReveived += ProcessReceivedRadioMessage;
 
-			this.port = port;
-			this.tcpListener = new TcpListener(IPAddress.Any, this.port);
-            
-			this.listenThread = new Thread(new ThreadStart(ListenForLocalLANClients));
-			this.listenThread.Start();
+            this.port = port;
+            this.tcpListener = new TcpListener(IPAddress.Any, this.port);
 
-            this.remoteServerThread = new Thread(new ThreadStart(RemoteServerManaging));
-            this.remoteServerThread.Start();
+            this.listenThread = new Thread(new ThreadStart(ListenForLocalLANClients));
+            this.listenThread.Start();
+
+            //this.remoteServerThread = new Thread(new ThreadStart(RemoteServerManaging));
+            //this.remoteServerThread.Start();
 		}
 
         //private void ProcessReceivedRadioMessage(RadioMessageEventArgs e)
@@ -119,6 +119,10 @@ namespace iContrAll.TcpServer
                     string power = "chi" + (i + 1) + "="+((powerValues[i] / 100) % 10).ToString() + ((powerValues[i] / 10) % 10).ToString() + (powerValues[i] % 10).ToString();
 
                     responseMsg += "&" + power;
+
+                    string timer = "cht" + (i + 1) + "=" + "X2200";
+
+                    responseMsg += "&" + timer;
                 }
                 Console.WriteLine("SendToAllClient: " + responseMsg);
                 SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(responseMsg)));
@@ -158,6 +162,10 @@ namespace iContrAll.TcpServer
                     string dimm = "chd" + (i + 1) + "=" + ((dimValues[i] / 100) % 10).ToString() + ((dimValues[i] / 10) % 10).ToString() + (dimValues[i] % 10).ToString();
 
                     responseMsg += "&" + dimm;
+
+                    string timer = "cht" + (i + 1) + "=" + "X2200";
+
+                    responseMsg += "&" + timer;
 
                     //string power = "chi" + (i + 1) + "=" + ((powerValues[i] / 100) % 10).ToString() + ((powerValues[i] / 10) % 10).ToString() + (powerValues[i] % 10).ToString();
 
@@ -233,9 +241,6 @@ namespace iContrAll.TcpServer
 
         public void SendToAllClient(byte[] bytesToSend)
         {
-            var asyncEvent = new SocketAsyncEventArgs();
-
-            asyncEvent.SetBuffer(bytesToSend, 0, bytesToSend.Length);
             //foreach (var i in asyncEvent.Buffer)
             //{
             //    Console.Write(i + "|");
@@ -246,7 +251,9 @@ namespace iContrAll.TcpServer
             {
                 foreach (var c in clientList)
                 {
-                    c.SendRadioMessage(asyncEvent);
+                    //var asyncEvent = new SocketAsyncEventArgs();
+                    //asyncEvent.SetBuffer(bytesToSend, 0, bytesToSend.Length);
+                    c.SendRadioMessage(bytesToSend);
                 }
             }
         }
@@ -255,11 +262,12 @@ namespace iContrAll.TcpServer
 
         private void RemoteServerManaging()
         {
-            if (!ConnectToRemoteServer()) return;
-            var readBuffer = new byte[bufferSize];
-            int numberOfBytesRead = -1;
             try
             {
+                if (!ConnectToRemoteServer()) return;
+                var readBuffer = new byte[bufferSize];
+                int numberOfBytesRead = -1;
+
                 if (sslStream.CanRead)
                 {
                     while (true)
@@ -277,7 +285,7 @@ namespace iContrAll.TcpServer
                         {
                             Console.WriteLine("Exception while reading from socket {0} in Server.RemoteServerManaging", this.remoteServer.Client.RemoteEndPoint);
                             Console.WriteLine(ex.Message);
-                            if (ex.InnerException!=null)
+                            if (ex.InnerException != null)
                             { Console.WriteLine(ex.InnerException.Message); }
 
                             break;
@@ -302,7 +310,6 @@ namespace iContrAll.TcpServer
             }
             finally
             {
-
                 sslStream.Close(); // including clientStream.Close();
                 remoteServer.Close();
                 Console.WriteLine("RemoteServer zár");
@@ -510,10 +517,10 @@ namespace iContrAll.TcpServer
                     Console.WriteLine("ArgumentNullException: {0}", e);
                     Thread.Sleep(5000);
                 }
-                catch (SocketException e)
+                catch (SocketException)
                 {
-                    // Console.WriteLine("SocketException: {0}", e);
                     Console.WriteLine("SocketException: Cannot connect to remote server.");
+                    //Console.WriteLine(e.Message);
                     Thread.Sleep(5000);
                 }
                 catch (Exception e)
@@ -524,6 +531,10 @@ namespace iContrAll.TcpServer
                     {
                         Console.WriteLine(e.InnerException.Message);
                     }
+                }
+                finally
+                {
+
                 }
             }
         }
