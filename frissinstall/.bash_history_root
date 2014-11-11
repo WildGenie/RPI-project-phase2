@@ -1,0 +1,56 @@
+passwrd
+passwd
+passwd
+mono
+apt-get upgrade
+apt-get update
+apt-get mono-complete
+apt-get install mono-complete
+apt-get install mysql-server
+mysql
+mysql -uroot -p
+reboot
+cd connector-net/
+gacutil /i MySql.Data.dll
+ls /usr/lib/mono/gac
+cd ..
+sudo apt-get install git-core
+sudo apt-get update
+sudo apt-get upgrade
+git clone git://git.drogon.net/wiringPi
+cd wiringPi/
+./build
+gpio load spi
+gpio load i2c
+gpio readall
+gpio detect i2c
+gpio i2cdetect
+i2cdetect -y 1
+nano /etc/modprobe.d/raspi-blacklist.conf 
+nano /etc/modules 
+gpio load i2c
+gpio i2cdetect
+i2cdetect -y 1
+i2cdetect -y 0
+nano /etc/modprobe.d/raspi-blacklist.conf 
+apt-get install libi2c-dev
+./build
+gpio load i2c
+i2cdetect -y 1
+cd ..
+xbuild /p:Configuration=Release iContrAll/iContrAll_Pi.sln 
+xbuild iContrAll/iContrAll_Pi.sln 
+mono iContrAll/bin/iContrAll.TcpServer.exe
+mono iContrAll/bin/iContrAll.TcpServer.exe alpha.icontrall.hu 1123 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri
+gpio readall
+gpio mode 2 up
+gpio readall
+gpio mode 2 up
+gpio readall
+mono iContrAll/bin/iContrAll.TcpServer.exe alpha.icontrall.hu 1123 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri
+gpio readall
+gpio mode 7 down
+gpio mode 7 out
+gpio readall
+mono iContrAll/bin/iContrAll.TcpServer.exe alpha.icontrall.hu 1123 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri
+su pi
