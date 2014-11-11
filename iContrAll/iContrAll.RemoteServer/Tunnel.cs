@@ -14,6 +14,7 @@ namespace iContrAll.RemoteServer
 
         Thread raspberryThread;
         Thread clientThread;
+
         public Tunnel(SslStream rh, ClientHandler ch)
         {
             this.Rasberry = rh;
@@ -22,8 +23,8 @@ namespace iContrAll.RemoteServer
             foreach (var m in ch.MessageBuffer)
             {
                 byte[] buffer = BuildMessage((byte)m.Type, Encoding.UTF8.GetBytes(m.Content));
-
-                rh.Write(buffer);
+                if (rh.CanWrite)
+                    rh.Write(buffer);
             }
 
             raspberryThread = new Thread(ListenForRasberryMessages);
@@ -60,8 +61,9 @@ namespace iContrAll.RemoteServer
                 try
                 {
                     // Read the client's test message.
-                    numberOfBytesRead = Client.SslStream.Read(buffer, 0, buffer.Length);
-                    Console.WriteLine("MessageFromClient: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
+                    numberOfBytesRead = Client.Read(buffer);
+                    if (numberOfBytesRead >= 0)
+                        Console.WriteLine("MessageFromClient: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
                 }
                 catch (ArgumentOutOfRangeException)
                 {
@@ -93,7 +95,6 @@ namespace iContrAll.RemoteServer
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("");
                     Console.WriteLine("Exception at Rasberry.Write() in Tunnel.ListenForClientMessages(): {0}", e.Message);
                     if (e.InnerException != null)
                     {
@@ -116,7 +117,6 @@ namespace iContrAll.RemoteServer
             {
                 try
                 {
-                    // Read the client's test message.
                     numberOfBytesRead = Rasberry.Read(buffer, 0, buffer.Length);
                     Console.WriteLine("MessageFromRaspberry: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
                 }
@@ -125,31 +125,47 @@ namespace iContrAll.RemoteServer
                     Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
                     continue;
                 }
-                //catch (Exception)
-                //{
-                //    Console.WriteLine("Exception while reading from socket in Tunnel.ListenForRasberryMessages");// {0}");//, sslStream..Endpoint);
-                //    break;
-                //}
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Exception while reading from socket in Tunnel.ListenForRasberryMessages");
+                    // Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
+                    Console.WriteLine(ex.Message);
+                    if (ex.InnerException != null)
+                        Console.WriteLine(ex.InnerException.Message);
+
+                    break;
+                    
+                }
 
                 if (numberOfBytesRead <= 0)
                 {
-                    //Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, tcpClient.RemoteEndPoint.ToString());
                     Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);//, tcpClient.RemoteEndPoint.ToString());
                     break;
                 }
 
-                //try
-                //{
-                    Client.Write(buffer, numberOfBytesRead);
-                //}
-                //catch (Exception)
-                //{
-                //    break;
-                //}
+                try
+                {
+                    bool successWrite = Client.Write(buffer, numberOfBytesRead);
+                    
+                    if (!successWrite)
+                    {
+                        Console.WriteLine("Client {0} is not connected.", Client.Identifier);
+                        Console.WriteLine("Closing connection");
+                        // Close tunnel, close connection to raspberry.
+                        Client.Close();
+                        Rasberry.Close();
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Exception in tunnel between Client: {0} and Rasbperry: {1}", Client.Identifier, "Raspberry shálálálá");
+                    Console.WriteLine(ex.Message);
+                    if (ex.InnerException!=null)
+                        Console.WriteLine(ex.InnerException.Message);
+                    break;
+                }
             }
         }
-
-
-
     }
 }

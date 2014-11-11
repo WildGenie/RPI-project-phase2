@@ -18,8 +18,7 @@ namespace iContrAll.RemoteServer
         private static TcpListener clientListener;
         private static Thread raspberryListenerThread;
         private static Thread clientListenerThread;
-        //private int raspberryPort;
-        //private int clientPort;
+        
         private static List<RaspberryHandler> raspberryList = new List<RaspberryHandler>();
         private static List<ClientHandler> clientList = new List<ClientHandler>();
 
@@ -28,63 +27,115 @@ namespace iContrAll.RemoteServer
         // containing the machine certificate. 
         public static void RunServer(string certificate, string password, int raspberryPort = 1123, int clientPort = 1124)
         {
-            serverCertificate = new X509Certificate2(certificate, password);
-            // Create a TCP/IP (IPv4) socket and listen for incoming connections.
-            clientListener = new TcpListener(IPAddress.Any, clientPort);
-            clientListenerThread = new Thread(new ThreadStart(listenForClients));
-            clientListenerThread.Start();
+            try
+            {
+        		serverCertificate = new X509Certificate2(certificate, password);
+                
+                // Create a TCP/IP (IPv4) socket and listen for incoming connections.
+                raspberryListener = new TcpListener(IPAddress.Any, raspberryPort);
+                clientListener = new TcpListener(IPAddress.Any, clientPort);
 
-            raspberryListener = new TcpListener(IPAddress.Any, raspberryPort);
-            raspberryListenerThread = new Thread(new ThreadStart(listenForRaspberries));
-            raspberryListenerThread.Start();
+                raspberryListenerThread = new Thread(new ThreadStart(listenForRaspberries));
+                clientListenerThread = new Thread(new ThreadStart(listenForClients));
+
+                raspberryListenerThread.Start();
+                clientListenerThread.Start();
+            }
+            catch(System.Security.Cryptography.CryptographicException ex)
+            {
+                Console.WriteLine("CryptographicException: {0}", ex.Message);
+                if (ex.InnerException != null)
+                { 
+                    Console.WriteLine(ex.InnerException.Message); 
+                }
+            }
+            catch(ArgumentOutOfRangeException ex)
+            {
+                Console.WriteLine("ArgumentOutOfRangeException: a port nem megfelelő tartományban mozog.");
+                Console.WriteLine(ex.Message);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Exception: {0}", ex.Message);
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine(ex.InnerException.Message);
+                }
+            }
         }
 
         private static object listSyncObject = new object();
 
         private static void listenForClients()
         {
-            clientListener.Start();
-            while (true)
+            try
             {
-                Console.WriteLine("Waiting for a client to connect...");
-                // Application blocks while waiting for an incoming connection. 
-                // Type CNTL-C to terminate the server.
-                TcpClient client = clientListener.AcceptTcpClient();
+                clientListener.Start();
+                while (true)
+                {
+                    Console.WriteLine("Waiting for a client to connect...");
+                    // Application blocks while waiting for an incoming connection. 
+                    // Type CNTL-C to terminate the server.
+                    TcpClient client = clientListener.AcceptTcpClient();
 
-                Console.WriteLine("Client connected");
+                    Console.WriteLine("Client connected");
 
-                var handleClientThread = new Thread(HandleClient);
-                handleClientThread.Start(client);
+                    var handleClientThread = new Thread(HandleClient);
+                    handleClientThread.Start(client);
+                }
             }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Exception in listenForClients: {0}", ex.Message);
+                if (ex.InnerException!=null)
+                {
+                    Console.WriteLine("InnerException: {0}", ex.InnerException.Message);
+                }
+            }
+
         }
 
         private static void listenForRaspberries()
         {
-            raspberryListener.Start();
-            while (true)
+            try
             {
-                Console.WriteLine("Waiting for a raspberry to connect...");
-                // Application blocks while waiting for an incoming connection. 
-                // Type CNTL-C to terminate the server.
-                TcpClient raspberry = raspberryListener.AcceptTcpClient();
-                
-                Console.WriteLine("Raspberry connected");
-                
-                var handleRaspberryThread = new Thread(HandleRaspberry);
-                handleRaspberryThread.Start(raspberry);
-                
+                raspberryListener.Start();
+                while (true)
+                {
+                    Console.WriteLine("Waiting for a raspberry to connect...");
+                    // Application blocks while waiting for an incoming connection. 
+                    // Type CNTL-C to terminate the server.
+                    TcpClient raspberry = raspberryListener.AcceptTcpClient();
+
+                    Console.WriteLine("Raspberry connected");
+
+                    var handleRaspberryThread = new Thread(HandleRaspberry);
+                    handleRaspberryThread.Start(raspberry);
+
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Exception in listenForRaspberries: {0}", ex.Message);
+                if (ex.InnerException!=null)
+                {
+                    Console.WriteLine("InnerException: {0}", ex.InnerException.Message);
+                }
             }
         }
 
         static void HandleRaspberry(object clientParam)
         {
-            TcpClient client = (TcpClient)clientParam;
-            Console.WriteLine("HandleRaspberry {0}", client.Client.RemoteEndPoint.ToString());
-            // A client has connected. Create the SslStream using the client's network stream.
-            SslStream sslStream = new SslStream(client.GetStream(), false);
-            // Authenticate the server but don't require the client to authenticate. 
-            try
+            TcpClient client = null;
+            SslStream sslStream = null;
+            try 
             {
+                client = (TcpClient)clientParam;
+                
+                Console.WriteLine("HandleRaspberry {0}", client.Client.RemoteEndPoint.ToString());
+                // A client has connected. Create the SslStream using the client's network stream.
+                sslStream = new SslStream(client.GetStream(), false);
+            
                 Console.WriteLine("Authentication started");
                 sslStream.AuthenticateAsServer(serverCertificate,
                     true, SslProtocols.Tls, true);
@@ -106,9 +157,10 @@ namespace iContrAll.RemoteServer
                         // Read the client's test message.
                         numberOfBytesRead = sslStream.Read(buffer, 0, buffer.Length);
                     }
-                    catch (ArgumentOutOfRangeException)
+                    catch (ArgumentOutOfRangeException aoe)
                     {
                         Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
+                        Console.WriteLine(aoe.ToString());
                         continue;
                     }
                     catch (Exception)
@@ -160,21 +212,22 @@ namespace iContrAll.RemoteServer
                             if (message.Type == MessageType.CreateThreadFor)
                             {
                                 Console.WriteLine("CreateTunnelFor request from {0}", client.Client.RemoteEndPoint.ToString());
-                                lock(listSyncObject)
+                                lock (listSyncObject)
                                 {
-                                    List<ClientHandler> chandlers = clientList.Where(ch => ch.Identifier == message.Content).ToList();
-                                    
-                                    if (chandlers.Count == 1)
+                                    List<ClientHandler> cHandlers = clientList.Where(ch => ch.Identifier == message.Content && ch.Connected).ToList();
+
+                                    if (cHandlers.Count == 1)
                                     {
-                                        Tunnel t = new Tunnel(sslStream, chandlers.First());
-                                        breakIt = true;
-                                        break;
+                                    
+                                            Tunnel t = new Tunnel(sslStream, cHandlers.First());
+                                            breakIt = true;
+                                            break;
                                     }
                                     //foreach (var ch in chandlers)
                                     //{
                                     //    Tunnel t = new Tunnel(sslStream, ch);
                                     //}
-                                    
+
                                 }
                             }
                     }
@@ -190,30 +243,46 @@ namespace iContrAll.RemoteServer
                     Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
                 }
                 Console.WriteLine("Authentication failed - closing the connection.");
-                sslStream.Close();
-                client.Close();
+                if (sslStream!=null)
+                    sslStream.Close();
+                if (client != null)
+                    client.Close();
                 return;
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Exception in HandleRaspberry init: invalid TcpClient or Stream is not exist");
+                Console.WriteLine("Exception: {0}", ex.Message);
+                if (ex.InnerException!=null)
+                {
+                    Console.WriteLine("InnerException: {0}", ex.InnerException.Message);
+                }
             }
             finally
             {
                 // The client stream will be closed with the sslStream 
                 // because we specified this behavior when creating 
                 // the sslStream.
-                //sslStream.Close();
-                //client.Close();
+                if (sslStream != null)
+                    sslStream.Close();
+                if (client != null)
+                    client.Close();
             }
         }
 
         static void HandleClient(object clientParam)
         {
-            TcpClient client = (TcpClient)clientParam;
-            Console.WriteLine("HandleClient {0} started at {1}", client.Client.RemoteEndPoint.ToString(), DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
-            // A client has connected. Create the  
-            // SslStream using the client's network stream.
-            SslStream sslStream = new SslStream(client.GetStream(), false);
-            // Authenticate the server but don't require the client to authenticate. 
+            TcpClient client = null;
+            SslStream sslStream = null;
             try
             {
+                client = (TcpClient)clientParam;
+                Console.WriteLine("HandleClient {0} started at {1}", client.Client.RemoteEndPoint.ToString(), DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
+                // A client has connected. Create the  
+                // SslStream using the client's network stream.
+                sslStream = new SslStream(client.GetStream(), false);
+                // Authenticate the server but don't require the client to authenticate. 
+
                 Console.WriteLine("Authentication STARTED at {0}", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
                 sslStream.AuthenticateAsServer(serverCertificate, true, SslProtocols.Ssl3, true);
 
@@ -229,7 +298,7 @@ namespace iContrAll.RemoteServer
                 while (true)
                 {
                     numberOfBytesRead = sslStream.Read(buffer, 0, buffer.Length);
-                    if (numberOfBytesRead<=0)
+                    if (numberOfBytesRead <= 0)
                     {
                         Console.WriteLine("Client closed the socket {0}", client.Client.RemoteEndPoint);
                         break;
@@ -255,7 +324,7 @@ namespace iContrAll.RemoteServer
                                     // Kérés a raspberry-hez, hogy indítson új csatornát amin aztán ezzel a klienssel fog kommunikálni.
                                     rh.First().SendCreateTunnelFor(client.Client.RemoteEndPoint.ToString());
 
-                                    ClientHandler ch = new ClientHandler() { TcpChannel = client, SslStream = sslStream, Identifier = client.Client.RemoteEndPoint.ToString() };
+                                    ClientHandler ch = new ClientHandler(client, sslStream);
 
                                     List<Message> tempMsgs = new List<Message>();
                                     for (int j = i + 1; j < messageBuffer.Count; j++)
@@ -275,8 +344,6 @@ namespace iContrAll.RemoteServer
                             // TODO: ask for creating thread, save this client
                             // TODO: vigyük a maradék üzeneteket át, kell a bejelentkezéshez!
                             // ClientHandler ch = new ClientHandler() { TcpChannel = client, SslStream = sslStream };
-
-
                         }
                     }
 
@@ -292,11 +359,9 @@ namespace iContrAll.RemoteServer
                     Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
                 }
                 Console.WriteLine("Authentication failed - closing the connection.");
-                sslStream.Close();
-                client.Close();
-                return;
+
             }
-                catch (Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine("Exception: {0}", e.Message);
                 if (e.InnerException != null)
@@ -310,8 +375,10 @@ namespace iContrAll.RemoteServer
                 //// The client stream will be closed with the sslStream 
                 //// because we specified this behavior when creating 
                 //// the sslStream.
-                //sslStream.Close();
-                //client.Close();
+                if (sslStream != null)
+                    sslStream.Close();
+                if (client != null)
+                    client.Close();
             }
         }
 
@@ -396,50 +463,7 @@ namespace iContrAll.RemoteServer
             return returnList;
         }
 
-        static string ReadMessage(SslStream sslStream)
-        {
-            // Read the  message sent by the client. 
-            byte[] buffer = new byte[2048];
-            StringBuilder messageData = new StringBuilder();
-            int numberOfBytesRead = -1;
-            while (true)
-            {
-                try
-                {
-                    // Read the client's test message.
-                    numberOfBytesRead = sslStream.Read(buffer, 0, buffer.Length);
-                }
-                
-                catch (ArgumentOutOfRangeException)
-                {
-                    Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
-                    continue;
-                }
-                catch (Exception)
-                {
-                    Console.WriteLine("Exception while reading from socket");// {0}");//, sslStream..Endpoint);
-                    break;
-                }
-
-                if (numberOfBytesRead <= 0)
-                {
-                    //Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, tcpClient.RemoteEndPoint.ToString());
-                    Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);//, tcpClient.RemoteEndPoint.ToString());
-                    break;
-                }
-
-                Console.WriteLine("Message (length={1}) received from: {0} at {2}", "valamisiphone", numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
-
-                byte[] readBytes = buffer.Take(numberOfBytesRead).ToArray();
-
-                string message = Encoding.UTF8.GetString(buffer);
-
-                
-            }
-
-            return messageData.ToString();
-        }
-
+        
         #region SslDisplayDetails
         static void DisplaySecurityLevel(SslStream stream)
         {

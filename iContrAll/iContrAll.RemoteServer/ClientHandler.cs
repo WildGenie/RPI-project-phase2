@@ -9,25 +9,85 @@ namespace iContrAll.RemoteServer
 {
     public class ClientHandler
     {
-        public TcpClient TcpChannel { get; set; }
-        public SslStream SslStream { get; set; }
+        private TcpClient tcpChannel;
+        private SslStream sslStream;
 
         // IP + port  vagy ami az üzenetben volt
-        public string Identifier { get; set; }
-
+        public string Identifier { get; private set; }
+        
         public List<Message> MessageBuffer { get; set; }
 
-        public void Write(byte[] message, int numberOfBytesRead)
+        public bool Connected { get { return tcpChannel.Connected; } }
+
+        public ClientHandler(TcpClient tcpChannel, SslStream sslStream)
         {
-            SslStream.Write(message, 0, numberOfBytesRead);
-            Console.WriteLine("SentToClient {0}", Encoding.UTF8.GetString(message, 0, numberOfBytesRead));
+            this.tcpChannel = tcpChannel;
+            this.sslStream = sslStream;
+            this.Identifier = this.tcpChannel.Client.RemoteEndPoint.ToString();
+        }
+
+        public bool Write(byte[] message, int numberOfBytesRead)
+        {
+            try
+            {
+                if (!tcpChannel.Connected)
+                {
+                    Console.WriteLine("Client is not connected {0}", Identifier);
+                    return false;
+                }
+                if (sslStream.CanWrite)
+                {
+                    sslStream.Write(message, 0, numberOfBytesRead);
+                    Console.WriteLine("SentToClient {0}", Encoding.UTF8.GetString(message, 0, numberOfBytesRead));
+
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine("Cannot write to sslStream at {0}", Identifier);
+                    return false;
+                }
+                
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Exception while trying to write to Client {0}", Identifier);
+                Console.WriteLine(ex.Message);
+                if (ex.InnerException!=null)
+                    Console.WriteLine(ex.InnerException);
+                return false;
+            }
         }
         
-        public byte[] Read()
+        public int Read(byte[] buffer)
         {
-            byte[] buffer = new byte[32768];
-            int numberOfBytesRead = SslStream.Read(buffer,0, buffer.Length);
-            return buffer;
+            int numberOfBytesRead = -1;
+            try
+            {
+                if (sslStream.CanRead)
+                    numberOfBytesRead = sslStream.Read(buffer, 0, buffer.Length);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Exception while reading from Client {0}", Identifier);
+                Console.WriteLine(ex.Message);
+                if (ex.InnerException!=null)
+                { Console.WriteLine(ex.InnerException.Message); }
+            }
+            return numberOfBytesRead;
+        }
+
+        public void Close()
+        {
+            try
+            {
+                sslStream.Close();
+                tcpChannel.Close();
+            }
+            catch(Exception)
+            {
+                Console.WriteLine("Exception while closing Client connection {0}", Identifier);
+            }
         }
     }
 }
