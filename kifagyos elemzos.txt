@@ -1,0 +1,624 @@
+pi@raspberrypi ~ $ sudo mono /home/pi/Desktop/IContrAll/iContrAll/iContrAll.TcpServer/bin/Debug/iContrAll.TcpServer.exe alpha.icontrall.hu 1123 alpha.icontrall.hu /home/pi/server.p12 allcontri
+!!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!!!NEW INSTANCE!!!!!!!!!!!!
+InitWiringPiSetup OK
+GPIO setup OK
+Interrupt pin setup ok
+interrup ugras eleje ok
+state ok: 0
+power up
+config rf chip
+Radio init sikeres
+SSDP server is listening...
+Server is listening on port 0.0.0.0:1122...
+SocketException: Cannot connect to remote server.
+SocketException: Cannot connect to remote server.
+SocketException: Cannot connect to remote server.
+SocketException: Cannot connect to remote server.
+SocketException: Cannot connect to remote server.
+SocketException: Cannot connect to remote server.
+M-SEARCH Received from: 192.168.1.6:59737
+Client connected: 192.168.1.6:49660
+HandleMessages started
+SocketException: Cannot connect to remote server.
+Message (length=109) received from: 192.168.1.6:49660 at 2014-10-16 22:54:11.852
+ReadBytes:
+14|0|0|0|101|0|0|0|60|63|120|109|108|32|118|101|114|115|105|111|110|61|34|49|46|48|34|32|101|110|99|111|100|105|110|103|61|34|85|84|70|45|56|34|63|62|60|114|111|111|116|62|60|108|111|103|105|110|105|100|62|51|54|48|48|48|48|49|49|49|49|60|47|108|111|103|105|110|105|100|62|60|112|97|115|115|119|111|114|100|62|60|47|112|97|115|115|119|111|114|100|62|60|47|114|111|111|116|62|Message.Content: <?xml version="1.0" encoding="UTF-8"?><root><loginid>3600001111</loginid><password></password></root>
+Message: Type=LoginRequest: <?xml version="1.0" encoding="UTF-8"?><root><loginid>3600001111</loginid><password></password></root>
+CreateLoginResponse: <?xml version="1.0" encoding="UTF-8"?><root><loginid>3600001111</loginid><password></password></root> Itt mi lehet a szar???
+Login: 3600001111 == 3600001111
+Password:  ==
+Response message:
+Message (length=8) received from: 192.168.1.6:49660 at 2014-10-16 22:54:12.513
+ReadBytes:
+6|0|0|0|0|0|0|0|Message.Content:
+Message: Type=QueryDeviceList:
+SocketException: Cannot connect to remote server.
+Response message: T<?xml version="1.0" encoding="utf-8"?><root><device><id>LC100001</id><ping>y</ping><mirror>n</mirror><version /><link>y</link><channels><ch><id>1</id><name>ffhh</name><attr><timer>1</timer><voltage>0</voltage></attr><actions><action id="1_1" name="on" /><action id="1_2" name="off" /></actions></ch><ch><id>2</id><name>ffhh</name><attr><timer>1</timer><voltage>0</voltage></attr><actions><action id="2_1" name="on" /><action id="2_2" name="off" /></actions></ch></channels></device><device><id>OC100001</id><ping>y</ping><mirror>n</mirror><version /><link>y</link><channels><ch><id>1</id><name>red</name><attr><timer>1</timer><voltage>0</voltage></attr><actions><action id="1_3" name="0" /><action id="1_4" name="25" /><action id="1_5" name="50" /><action id="1_6" name="75" /><action id="1_7" name="100" /></actions></ch></channels></device></root>
+Message (length=8) received from: 192.168.1.6:49660 at 2014-10-16 22:54:17.515
+ReadBytes:
+24|0|0|0|0|0|0|0|Message.Content:
+Message: Type=eCmdGetPlaceList:
+AnswerPlaceList called.
+Response message: ^<?xml version="1.0" encoding="utf-8"?><root><room id="11fe6be7-669b-4141-8d6e-4ce45f013c22" name="teszt"><dev id="LC100001" ch="2" /><dev id="OC100001" ch="1" /></room><room id="2c7c0dae-ac5a-4ad1-931c-927558e434b4" name="teszt2"><dev id="LC100001" ch="2" /><dev id="OC100001" ch="1" /></room><room id="2e2ca1e4-e9a2-4b1c-a7ac-8269a7b17548" name="lakás"><dev id="LC100001" ch="1" /><dev id="LC100001" ch="2" /><dev id="OC100001" ch="1" /></room><room id="ac9398e4-a13f-4bed-b26c-72049b45e1d7" name="ghg"><dev id="LC100001" ch="1" /><dev id="LC100001" ch="2" /><dev id="OC100001" ch="1" /></room></root>
+SocketException: Cannot connect to remote server.
+Message (length=16) received from: 192.168.1.6:49660 at 2014-10-16 22:54:19.402
+ReadBytes:
+18|0|0|0|8|0|0|0|76|67|49|48|48|48|48|49|Message.Content: LC100001
+Message: Type=QueryMessageHistory: LC100001
+Response to QueryMessageHistory: LC1000010000111160chs1=0&chd1=000&chi1=000chs2=1&chd2=000&chi2=001
+Message (length=32) received from: 192.168.1.6:49660 at 2014-10-16 22:54:19.632
+ReadBytes:
+18|0|0|0|8|0|0|0|76|67|49|48|48|48|48|49|18|0|0|0|8|0|0|0|79|67|49|48|48|48|48|49|Message.Content: LC100001
+Message: Type=QueryMessageHistory: LC100001
+Response to QueryMessageHistory: LC1000010000111160chs1=0&chd1=000&chi1=000chs2=1&chd2=000&chi2=001
+Message.Content: OC100001
+Message: Type=QueryMessageHistory: OC100001
+Response to QueryMessageHistory: OC1000010000111150&chd1=120
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:21.750
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|49|61|49|Message.Content: 00001111LC10000167ch1=1
+Message: Type=RadioMsg: 00001111LC10000167ch1=1
+Kiolvasott dimvalue: 0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:22.053
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|50|61|48|Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+Kiolvasott dimvalue: 0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:23.019
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|50|61|49|Message.Content: 00001111LC10000167ch2=1
+Message: Type=RadioMsg: 00001111LC10000167ch2=1
+Kiolvasott dimvalue: 0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:23.401
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|49|61|48|Message.Content: 00001111LC10000167ch1=0
+Message: Type=RadioMsg: 00001111LC10000167ch1=0
+interrup ugras eleje ok
+state ok: 2
+packet received
+Esemény:LC10000100001111d10xxLC1000 hossz=64
+LC100001=>00001111
+
+LC100001=>00001111:10xx
+Kiolvasott dimvalue: 0
+SendToAllClient: LC1000010000111160chs1=1&chd1=000&chi1=001&chs2=0&chd2=000&chi2=000&chs3=0&chd3=000&chi3=000&chs4=0&chd4=000&chi4=000
+
+packet sent
+interrup ugras eleje ok
+state ok: 2
+packet received
+Esemény:LC10000100001111LC10000100001111LC10000100001111LC10000100001111 hossz=64
+LC100001=>00001111
+
+LC100001=>00001111:0000
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:23.893
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|49|61|49|Message.Content: 00001111LC10000167ch1=1
+Message: Type=RadioMsg: 00001111LC10000167ch1=1
+SocketException: Cannot connect to remote server.
+SendToAllClient: LC1000010000111160chs1=0&chd1=048&chi1=049&chs2=0&chd2=049&chi2=048&chs3=0&chd3=049&chi3=048&chs4=0&chd4=049&chi4=048
+
+Kiolvasott dimvalue: 48
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:24.325
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|50|61|49|Message.Content: 00001111LC10000167ch2=1
+Message: Type=RadioMsg: 00001111LC10000167ch2=1
+Kiolvasott dimvalue: 49
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:25.127
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|50|61|48|Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+Kiolvasott dimvalue: 49
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:25.464
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|49|61|49|Message.Content: 00001111LC10000167ch1=1
+Message: Type=RadioMsg: 00001111LC10000167ch1=1
+Kiolvasott dimvalue: 48
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:26.016
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|49|61|48|Message.Content: 00001111LC10000167ch1=0
+Message: Type=RadioMsg: 00001111LC10000167ch1=0
+Kiolvasott dimvalue: 48
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=0
+interrup ugras eleje ok
+state ok: 2
+packet received
+Esemény: hossz=64
+=>
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:26.390
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|50|61|49|Message.Content: 00001111LC10000167ch2=1
+Message: Type=RadioMsg: 00001111LC10000167ch2=1
+Kiolvasott dimvalue: 49
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=1
+interrup ugras eleje ok
+state ok: 2
+packet received
+Esemény:LC10000100001111d01xx01 hossz=64
+LC100001=>00001111
+
+LC100001=>00001111:01xx
+SendToAllClient: LC1000010000111160chs1=0&chd1=048&chi1=000&chs2=1&chd2=049&chi2=001&chs3=0&chd3=000&chi3=000&chs4=0&chd4=000&chi4=000
+
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:27.012
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|50|61|48|Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+Kiolvasott dimvalue: 49
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+interrup ugras eleje ok
+state ok: 2
+packet received
+Esemény:LC10000100001111d00xx01 hossz=64
+LC100001=>00001111
+
+LC100001=>00001111:00xx
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:27.384
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|49|61|49|Message.Content: 00001111LC10000167ch1=1
+Message: Type=RadioMsg: 00001111LC10000167ch1=1
+SendToAllClient: LC1000010000111160chs1=0&chd1=048&chi1=000&chs2=0&chd2=049&chi2=000&chs3=0&chd3=000&chi3=000&chs4=0&chd4=000&chi4=000
+
+Kiolvasott dimvalue: 48
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=1
+interrup ugras eleje ok
+state ok: 2
+packet received
+Esemény:LC10000100001111d10xx01 hossz=64
+LC100001=>00001111
+
+LC100001=>00001111:10xx
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:28.122
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|49|61|49|Message.Content: 00001111LC10000167ch1=1
+Message: Type=RadioMsg: 00001111LC10000167ch1=1
+SendToAllClient: LC1000010000111160chs1=1&chd1=048&chi1=001&chs2=0&chd2=049&chi2=000&chs3=0&chd3=000&chi3=000&chs4=0&chd4=000&chi4=000
+
+Kiolvasott dimvalue: 48
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:28.498
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|50|61|49|Message.Content: 00001111LC10000167ch2=1
+Message: Type=RadioMsg: 00001111LC10000167ch2=1
+Kiolvasott dimvalue: 49
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=1
+SocketException: Cannot connect to remote server.
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:29.221
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|50|61|48|Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+Kiolvasott dimvalue: 49
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:29.603
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|49|61|48|Message.Content: 00001111LC10000167ch1=0
+Message: Type=RadioMsg: 00001111LC10000167ch1=0
+Kiolvasott dimvalue: 48
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:33.500
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|49|61|49|Message.Content: 00001111LC10000167ch1=1
+Message: Type=RadioMsg: 00001111LC10000167ch1=1
+Kiolvasott dimvalue: 48
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:33.795
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|50|61|49|Message.Content: 00001111LC10000167ch2=1
+Message: Type=RadioMsg: 00001111LC10000167ch2=1
+Kiolvasott dimvalue: 49
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=1
+interrup ugras eleje ok
+state ok: 2
+packet received
+Esemény:LC10000100001111d11xx01LC1000 hossz=64
+LC100001=>00001111
+
+LC100001=>00001111:11xx
+SocketException: Cannot connect to remote server.
+SendToAllClient: LC1000010000111160chs1=1&chd1=048&chi1=001&chs2=1&chd2=049&chi2=001&chs3=0&chd3=000&chi3=000&chs4=0&chd4=000&chi4=000
+
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:34.434
+ReadBytes:
+1|0|0|0|23|0|0|0|interrup ugras eleje ok
+state ok: 2
+packet received
+Esemény:LC10000100001111d11xx01 hossz=64
+LC100001=>00001111
+
+LC100001=>00001111:11xx
+48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|50|61|48|Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+SendToAllClient: LC1000010000111160chs1=1&chd1=048&chi1=001&chs2=1&chd2=049&chi2=001&chs3=0&chd3=000&chi3=000&chs4=0&chd4=000&chi4=000
+
+Kiolvasott dimvalue: 49
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:34.838
+ReadBytes:
+1|0|0|0|23|0|0|0|48|48|48|48|49|49|49|49|76|67|49|48|48|48|48|49|54|55|99|104|49|61|48|Message.Content: 00001111LC10000167ch1=0
+Message: Type=RadioMsg: 00001111LC10000167ch1=0
+Kiolvasott dimvalue: 48
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=0
+interrup ugras eleje ok
+state ok: 2
+packet received
+Esemény:LC10000100001111d01xx01 hossz=64
+LC100001=>00001111
+
+LC100001=>00001111:01xx
+SendToAllClient: LC1000010000111160chs1=0&chd1=048&chi1=000&chs2=1&chd2=049&chi2=001&chs3=0&chd3=000&chi3=000&chs4=0&chd4=000&chi4=000
+
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:48.271
+Message.Content: 00001111LC10000167ch1=0
+Message: Type=RadioMsg: 00001111LC10000167ch1=0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=0
+interrup ugras eleje ok
+state ok: 2
+packet received
+Esemény:LC10000100001111d01xx01 hossz=64
+LC100001=>00001111
+
+LC100001=>00001111:01xx
+SendToAllClient: LC1000010000111160chs1=0&chd1=048&chi1=000&chs2=1&chd2=049&chi2=001&chs3=0&chd3=000&chi3=000&chs4=0&chd4=000&chi4=000
+
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:53.563
+Message.Content: 00001111LC10000167ch1=1
+Message: Type=RadioMsg: 00001111LC10000167ch1=1
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:53.816
+Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:54.351
+Message.Content: 00001111LC10000167ch2=1
+Message: Type=RadioMsg: 00001111LC10000167ch2=1
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:54.616
+Message.Content: 00001111LC10000167ch1=0
+Message: Type=RadioMsg: 00001111LC10000167ch1=0
+interrup ugras eleje ok
+state ok: 2
+packet received
+Esemény:LC10000100001111d11xx01LC100001000011111000 hossz=64
+LC100001=>00001111
+
+LC100001=>00001111:11xx
+Kiolvasott dimvalue: 48
+SendToAllClient: LC1000010000111160chs1=1&chd1=048&chi1=001&chs2=1&chd2=049&chi2=001&chs3=0&chd3=000&chi3=000&chs4=0&chd4=000&chi4=000
+
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:55.031
+Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:55.504
+Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:55.752
+Message.Content: 00001111LC10000167ch1=0
+Message: Type=RadioMsg: 00001111LC10000167ch1=0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:55.993
+Message.Content: 00001111LC10000167ch2=1
+Message: Type=RadioMsg: 00001111LC10000167ch2=1
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:56.491
+Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:56.732
+Message.Content: 00001111LC10000167ch1=1
+Message: Type=RadioMsg: 00001111LC10000167ch1=1
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:56.983
+Message.Content: 00001111LC10000167ch2=1
+Message: Type=RadioMsg: 00001111LC10000167ch2=1
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:57.484
+Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+Kiolvasott dimvalue: 49
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:54:58.605
+Message.Content: 00001111LC10000167ch2=1
+Message: Type=RadioMsg: 00001111LC10000167ch2=1
+M-SEARCH Received from: 192.168.1.9:55856
+Client connected: 192.168.1.9:55783
+HandleMessages started
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=1
+Message (length=109) received from: 192.168.1.9:55783 at 2014-10-16 22:55:01.790
+Message.Content: <?xml version="1.0" encoding="UTF-8"?><root><loginid>3600001111</loginid><password></password></root>
+Message: Type=LoginRequest: <?xml version="1.0" encoding="UTF-8"?><root><loginid>3600001111</loginid><password></password></root>
+CreateLoginResponse: <?xml version="1.0" encoding="UTF-8"?><root><loginid>3600001111</loginid><password></password></root> Itt mi lehet a szar???
+Login: 3600001111 == 3600001111
+Password:  ==
+Response message:
+Message (length=8) received from: 192.168.1.9:55783 at 2014-10-16 22:55:01.827
+Message.Content:
+Message: Type=QueryDeviceList:
+Response message: T<?xml version="1.0" encoding="utf-8"?><root><device><id>LC100001</id><ping>y</ping><mirror>n</mirror><version /><link>y</link><channels><ch><id>1</id><name>ffhh</name><attr><timer>1</timer><voltage>0</voltage></attr><actions><action id="1_1" name="on" /><action id="1_2" name="off" /></actions></ch><ch><id>2</id><name>ffhh</name><attr><timer>1</timer><voltage>0</voltage></attr><actions><action id="2_1" name="on" /><action id="2_2" name="off" /></actions></ch></channels></device><device><id>OC100001</id><ping>y</ping><mirror>n</mirror><version /><link>y</link><channels><ch><id>1</id><name>red</name><attr><timer>1</timer><voltage>0</voltage></attr><actions><action id="1_3" name="0" /><action id="1_4" name="25" /><action id="1_5" name="50" /><action id="1_6" name="75" /><action id="1_7" name="100" /></actions></ch></channels></device></root>
+Message (length=8) received from: 192.168.1.9:55783 at 2014-10-16 22:55:06.972
+Message.Content:
+Message: Type=eCmdGetPlaceList:
+AnswerPlaceList called.
+Response message: ^<?xml version="1.0" encoding="utf-8"?><root><room id="11fe6be7-669b-4141-8d6e-4ce45f013c22" name="teszt"><dev id="LC100001" ch="2" /><dev id="OC100001" ch="1" /></room><room id="2c7c0dae-ac5a-4ad1-931c-927558e434b4" name="teszt2"><dev id="LC100001" ch="2" /><dev id="OC100001" ch="1" /></room><room id="2e2ca1e4-e9a2-4b1c-a7ac-8269a7b17548" name="lakás"><dev id="LC100001" ch="1" /><dev id="LC100001" ch="2" /><dev id="OC100001" ch="1" /></room><room id="ac9398e4-a13f-4bed-b26c-72049b45e1d7" name="ghg"><dev id="LC100001" ch="1" /><dev id="LC100001" ch="2" /><dev id="OC100001" ch="1" /></room></root>
+Message (length=16) received from: 192.168.1.9:55783 at 2014-10-16 22:55:09.738
+Message.Content: LC100001
+Message: Type=QueryMessageHistory: LC100001
+Response to QueryMessageHistory: LC1000010000111160chs1=1&chd1=048&chi1=001chs2=1&chd2=049&chi2=001
+Message (length=32) received from: 192.168.1.9:55783 at 2014-10-16 22:55:09.874
+Message.Content: LC100001
+Message: Type=QueryMessageHistory: LC100001
+Response to QueryMessageHistory: LC1000010000111160chs1=1&chd1=048&chi1=001chs2=1&chd2=049&chi2=001
+Message.Content: OC100001
+Message: Type=QueryMessageHistory: OC100001
+Response to QueryMessageHistory: OC1000010000111150&chd1=120
+Message (length=48) received from: 192.168.1.9:55783 at 2014-10-16 22:55:10.166
+Message.Content: LC100001
+Message: Type=QueryMessageHistory: LC100001
+Response to QueryMessageHistory: LC1000010000111160chs1=1&chd1=048&chi1=001chs2=1&chd2=049&chi2=001
+Message.Content: LC100001
+Message: Type=QueryMessageHistory: LC100001
+Response to QueryMessageHistory: LC1000010000111160chs1=1&chd1=048&chi1=001chs2=1&chd2=049&chi2=001
+Message.Content: OC100001
+Message: Type=QueryMessageHistory: OC100001
+Response to QueryMessageHistory: OC1000010000111150&chd1=120
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:55:12.867
+Message.Content: 00001111LC10000167ch1=0
+Message: Type=RadioMsg: 00001111LC10000167ch1=0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:55:13.117
+Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+Kiolvasott dimvalue: 49
+Message (length=31) received from: 192.168.1.9:55783 at 2014-10-16 22:55:13.295
+Message.Content: 00001111LC10000167ch1=0
+Message: Type=RadioMsg: 00001111LC10000167ch1=0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:55:13.768
+Message.Content: 00001111LC10000167ch2=1
+Message: Type=RadioMsg: 00001111LC10000167ch2=1
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:55:14.098
+Message.Content: 00001111LC10000167ch1=1
+Message: Type=RadioMsg: 00001111LC10000167ch1=1
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:55:14.352
+Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+Kiolvasott dimvalue: 49
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:55:14.993
+Message.Content: 00001111LC10000167ch2=1
+Message: Type=RadioMsg: 00001111LC10000167ch2=1
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:55:15.331
+Message.Content: 00001111LC10000167ch1=0
+Message: Type=RadioMsg: 00001111LC10000167ch1=0
+Message (length=31) received from: 192.168.1.9:55783 at 2014-10-16 22:55:15.500
+Message.Content: 00001111LC10000167ch1=1
+Message: Type=RadioMsg: 00001111LC10000167ch1=1
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:55:15.629
+Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+Kiolvasott dimvalue: 48
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=1
+Message (length=31) received from: 192.168.1.9:55783 at 2014-10-16 22:55:15.785
+Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=0
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:55:16.216
+Message.Content: 00001111LC10000167ch2=1
+Message: Type=RadioMsg: 00001111LC10000167ch2=1
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Message (length=31) received from: 192.168.1.9:55783 at 2014-10-16 22:55:16.414
+Message.Content: 00001111LC10000167ch2=1
+Message: Type=RadioMsg: 00001111LC10000167ch2=1
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:55:16.476
+Message.Content: 00001111LC10000167ch1=1
+Message: Type=RadioMsg: 00001111LC10000167ch1=1
+interrup ugras eleje ok
+state ok: 1
+packet sent
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch2=1
+Message (length=31) received from: 192.168.1.9:55783 at 2014-10-16 22:55:16.771
+Message.Content: 00001111LC10000167ch1=0
+Message: Type=RadioMsg: 00001111LC10000167ch1=0
+Elvileg a kiküldés végére ér
+Sent on radio: 00001111LC10000167ch1=1
+Message (length=31) received from: 192.168.1.6:49660 at 2014-10-16 22:55:16.813
+Message.Content: 00001111LC10000167ch2=0
+Message: Type=RadioMsg: 00001111LC10000167ch2=0
+Kiolvasott dimvalue: 48
+Kiolvasott dimvalue: 49
