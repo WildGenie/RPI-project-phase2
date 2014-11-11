@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace iContrAll.RealTimeClock
 {
-    // TODO: IDisposable
+    // TODO: Singleton
     public class RealTimeClock
     {
         int fd;
@@ -17,7 +17,7 @@ namespace iContrAll.RealTimeClock
         {
             try
             {
-                DateTime now = new NetworkTime().GetDateTime(true);
+                DateTime now = new NetworkTime().GetDateTime(false);
                 return now;
             }
             catch (NoServerFoundException ex)
@@ -30,9 +30,10 @@ namespace iContrAll.RealTimeClock
         public bool Synchronize()
         {
             if (!initOK) fd = InitI2C();
-
+            
             try
             {
+                if (!initOK) throw new Exception("Failed to initialize I2C modul");
                 DateTime now = new NetworkTime().GetDateTime(true);
 
                 Console.WriteLine("The current date and time: {0:yyyy/MM/dd H:mm:ss}", now); 
@@ -63,11 +64,11 @@ namespace iContrAll.RealTimeClock
                 Console.WriteLine(ex.Message);
                 return false;
             }
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine(ex.Message);
-            //    return false;
-            //}
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
         }
 
         private int InitI2C()
@@ -154,12 +155,13 @@ namespace iContrAll.RealTimeClock
 
         public DateTime Read()
         {
-            if (!initOK) fd = InitI2C();
+            //if (!initOK) fd = InitI2C();
+            if (!Synchronize()) Console.WriteLine("Syncronization failed");
 
             int s = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 0));
             int m = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 1));
             int h = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 2));
-            // int dname = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 3));
+            int dname = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 3));
             int d = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 4));
             int mo = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 5));
             int y = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 6));
@@ -168,11 +170,21 @@ namespace iContrAll.RealTimeClock
             y+=2000;
 
             //int c = I2C.wiringPiI2CReadReg8(fd, 7);
-            // Console.WriteLine("The current datetime is: {0}.{1}.{2}. {3},  {4}:{5}:{6}", y, mo, d, dname, h, m, s);
-            DateTime now = new DateTime(y, mo, d, h, m, s);
-            
+            Console.WriteLine("The current datetime is: {0}.{1}.{2}. {3},  {4}:{5}:{6}", y, mo, d, dname, h, m, s);
+            try
+            {
+                DateTime now = new DateTime(y, mo, d, h, m, s);
+                return now;
+            }
+            catch(ArgumentOutOfRangeException ex)
+            {
+                Console.WriteLine("Exception: {0}", ex.Message);
+                Console.WriteLine("RealTimeClock modul has not been initialized yet, returning with system clock.");
+                return DateTime.Now;
+            }
 
-            return now;
+            
         }
+
     }
 }
