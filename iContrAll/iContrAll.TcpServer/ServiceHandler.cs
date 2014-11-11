@@ -423,6 +423,7 @@ namespace iContrAll.TcpServer
                     {
                         if (!Radio.Instance.SendMessage(Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + "xxxx" + "xxxx")))
                             Console.WriteLine("Failed to send message on radio");
+                        return;
                     }
 
                     int channelId;
@@ -585,6 +586,7 @@ namespace iContrAll.TcpServer
                             }
                             if (!Radio.Instance.SendMessage(Encoding.UTF8.GetBytes(toSend.ToString())))
                                 Console.WriteLine("Failed to send message on radio");
+                            return;
                         }
 
                         int channelId = -1;
