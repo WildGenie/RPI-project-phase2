@@ -14,7 +14,7 @@ namespace iContrAll.SsdpServerLib
         public string Identifier
         {
             get { return identifier; }
-            set { identifier = value; }
+            private set { identifier = value; }
         }
 
         private Thread ssdpListenerThread;
