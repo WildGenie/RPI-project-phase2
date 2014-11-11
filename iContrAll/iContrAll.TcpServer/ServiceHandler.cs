@@ -55,12 +55,7 @@ namespace iContrAll.TcpServer
 					{
 						try
 						{
-                            // Console.WriteLine("Radio osztaly letezik olvasas elott??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
-                            //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
                             numberOfBytesRead = tcpClient.Read(readBuffer, 0, bufferSize);
-							// Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);
-                            //Console.WriteLine("Radio osztaly letezik olvasas utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
-                            //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 						}
 						catch(ArgumentOutOfRangeException)
 						{
@@ -81,11 +76,7 @@ namespace iContrAll.TcpServer
 						Console.WriteLine("Message (length={1}) received from: {0} at {2}", tcpClient.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
 
 						byte[] readBytes = readBuffer.Take(numberOfBytesRead).ToArray();
-                        Console.WriteLine("ReadBytes:");
-                        for (int i = 0; i < readBytes.Length; i++)
-                        {
-                            Console.Write(readBytes[i]+"|");
-                        }
+                        
 						foreach (var message in ProcessBuffer(readBytes))
 						{
                             Console.WriteLine("Message.Content: {0}", message.Content);
@@ -95,18 +86,14 @@ namespace iContrAll.TcpServer
                                 continue;
                             }
 							var result = ProcessMessage(message);
-                            //Console.WriteLine("Radio osztaly letezik ProcessMessage utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
-                            //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
-							if (result == null || result.Length <= 0) continue;
-							// else reply!
+                            if (result == null || result.Length <= 0) continue;
 
 							// TODO: delete next line, it's just for debugging
 							Console.WriteLine("Response message: " + Encoding.UTF8.GetString(result));
 							// Reply to request
                             tcpClient.Write(result); // clientStream.Write(result, 0, result.Length);
 						}
-                        //Console.WriteLine("Radio osztaly letezik ProcessMessage foreach utan??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
-                        //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
+                        
 					}
 				}
 			}
@@ -125,14 +112,16 @@ namespace iContrAll.TcpServer
 		}
 
         // Send the message.
-        public void SendRadioMessage(SocketAsyncEventArgs asyncEvent)
+        public void SendRadioMessage(byte[] bytesToSend)
+        // public void SendRadioMessage(SocketAsyncEventArgs asyncEvent)
         {
             //string message = msg;
             try
             {
-                asyncEvent.Completed += OnMessageSendCompleted;
-                // tcpClient.Write(asyncEvent.Buffer);
-                tcpClient.SendAsync(asyncEvent);
+                //asyncEvent.Completed += OnMessageSendCompleted;
+                tcpClient.Write(bytesToSend);
+                Console.WriteLine("RadioResponse sent to: {0}", Endpoint);
+                //tcpClient.SendAsync(asyncEvent);
             }
             catch (Exception ex)
             {
@@ -344,6 +333,10 @@ namespace iContrAll.TcpServer
                             string power = "chi" + s.DeviceChannel + "=" + ((s.Power / 100) % 10).ToString() + ((s.Power / 10) % 10).ToString() + (s.Power % 10).ToString();
                             
                             responseMsg += "&" + power;
+
+                            string timer = "cht" + s.DeviceChannel + "=" + "X2200";
+
+                            responseMsg += "&" + timer;
                             //tcpClient.GetStream().Write(bytesToSend, 0, bytesToSend.Length);
                         }
 
@@ -375,6 +368,10 @@ namespace iContrAll.TcpServer
 
                             responseMsg += "&" + dimm;
 
+                            string timer = "cht" + s.DeviceChannel + "=" + "X2200";
+
+                            responseMsg += "&" + timer;
+
                             // string power = "chi" + s.DeviceChannel + "=" + ((s.Power / 100) % 10).ToString() + ((s.Power / 10) % 10).ToString() + (s.Power % 10).ToString();
 
                             // responseMsg += "&" + power;
@@ -404,21 +401,33 @@ namespace iContrAll.TcpServer
                 string raspberryId = System.Configuration.ConfigurationManager.AppSettings["loginid"];
                 string senderIdInMsg = message.Substring(0, 8);
                 // ha nem a mi eszközünk, eldobjuk
-                if (raspberryId.Substring(2) != senderIdInMsg) return;
-
+                if (raspberryId.Substring(2) != senderIdInMsg)
+                {
+                    Console.WriteLine("Sender id is not equal: {0} != {1}", raspberryId.Substring(2), senderIdInMsg);
+                    return;
+                }
                 // cél eszköz
                 string targetIdInMsg = message.Substring(8, 8);
 
                 // az üzenet 19.bájtjától kezdődik a lényeg
                 string command = message.Substring(18);
+                
                 #region Lámpa üzenet megformálása
                 // lámpa
                 if (targetIdInMsg.StartsWith("LC1"))
                 {
                     string channelControl = "";
 
+                    // Állapotlekérés
+                    if (command == string.Empty)
+                    {
+                        if (!Radio.Instance.SendMessage(Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + "xxxx" + "xxxx")))
+                            Console.WriteLine("Failed to send message on radio");
+                    }
+
                     int channelId;
                     int eqPos = command.IndexOf('=');
+                    Console.WriteLine(command);
 
                     if (eqPos == 3)
                     {
@@ -435,7 +444,6 @@ namespace iContrAll.TcpServer
                         }
 
                         byte[] dimValues = new byte[4] { 0, 0, 0, 0 };
-                        // TODO: lekérni rendes dimvalue-kat
 
                         using (var dal = new DataAccesLayer())
                         {
@@ -457,9 +465,8 @@ namespace iContrAll.TcpServer
                         Array.Copy(dimValues, 0, retBytes, basicBytes.Length, 4);
 
                         //byte[] retBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + channelControl + "xxxx");
-                        Radio.Instance.SendMessage(retBytes);
-
-
+                        if (!Radio.Instance.SendMessage(retBytes))
+                            Console.WriteLine("Failed to send message on radio");
                     }
                     else
                         //if (targetIdInMsg.StartsWith("LC1"))
@@ -472,11 +479,11 @@ namespace iContrAll.TcpServer
                                 #region normal mukodes
                                 string dim = command.Substring(eqPos + 1);
 
-                                int iOfPoint = dim.IndexOf('.');
+                                int iOfDot = dim.IndexOf('.');
 
                                 int dimValue;
 
-                                int.TryParse(dim.Substring(0, iOfPoint), out dimValue);
+                                int.TryParse(dim.Substring(0, iOfDot), out dimValue);
 
                                 // Console.WriteLine("DIM üzenet: " + dim + "("+dim.Substring(0,iOfPoint)+")"+ "=> " + dimValue + " on channel " + channelId);
 
@@ -515,7 +522,8 @@ namespace iContrAll.TcpServer
                                 //}
                                 //Console.WriteLine();
 
-                                Radio.Instance.SendMessage(retBytes);
+                                if (!Radio.Instance.SendMessage(retBytes))
+                                    Console.WriteLine("Failed to send message on radio");
 
                                 #endregion
 
@@ -563,6 +571,22 @@ namespace iContrAll.TcpServer
                         // hiszen lehetséges, hogy többféle eszköz is gyártásra kerül
                         int chCount = 2;
 
+                        // Állapotlekérés
+                        if (command == string.Empty)
+                        {
+                            StringBuilder toSend = new StringBuilder();
+                            toSend.Append(senderIdInMsg + targetIdInMsg + "01" + "x");
+                            for (int i = 0; i < 2; i++)
+                            {
+                                for (int j = 0; j < chCount; j++)
+                                {
+                                    toSend.Append("x");
+                                }
+                            }
+                            if (!Radio.Instance.SendMessage(Encoding.UTF8.GetBytes(toSend.ToString())))
+                                Console.WriteLine("Failed to send message on radio");
+                        }
+
                         int channelId = -1;
                         try
                         {
@@ -598,8 +622,8 @@ namespace iContrAll.TcpServer
                             case 's':
                                 for (int i = 0; i < chCount; i++)
                                 {
-                                    channelControl += (i == channelId) ? value[0] : 'x';
-                                    retArray[retArray.Length - (2 * chCount) + i] = Convert.ToByte((i == channelId) ? value[0] : 'x');
+                                    //channelControl += (i == channelId) ? value[0] : 'x';
+                                    retArray[retArray.Length - (2 * chCount) + i] = Convert.ToByte((i + 1 == channelId) ? value[0] : 'x');
                                 }
 
                                 for (int i = 0; i < chCount; i++)
@@ -610,17 +634,18 @@ namespace iContrAll.TcpServer
                                 break;
                             // százalékos állítás, dim: ch->D<- = 0..100/255
                             case 'd':
-                                int indexOfPoint = command.IndexOf('.');
-                                if (indexOfPoint == -1) indexOfPoint = value.Length;
+                                int indexOfDot = value.IndexOf('.');
+                                if (indexOfDot == -1) indexOfDot = value.Length;
 
                                 int shutterState = -1;
                                 try
                                 {
-                                    shutterState = int.Parse(value.Substring(0, indexOfPoint - eqPos));
+                                    shutterState = int.Parse(value.Substring(0, indexOfDot));
+                                    Console.WriteLine("ShutterState: {0}", shutterState);
                                 }
                                 catch (Exception e)
                                 {
-                                    Console.WriteLine("Exception: Cannot parse shutterState in SendCommandOnRadio({0})", message);
+                                    Console.WriteLine("Exception: Cannot parse shutterState in SendCommandOnRadio({0}), Value: {2} IndexOfDot: {1}", message, indexOfDot, value);
                                     Console.WriteLine(e.Message);
                                     if (e.InnerException != null)
                                         Console.WriteLine(e.InnerException.Message);
@@ -643,20 +668,35 @@ namespace iContrAll.TcpServer
                                 // a felhasználótól kapott shutterState-et írjuk be, vagy 255-t.
                                 for (int i = 0; i < chCount; i++)
                                 {
-                                    retArray[retArray.Length - chCount + i] = (i == channelId) ? shutterStateAsByte : b;
+                                    retArray[retArray.Length - chCount + i] = (i + 1 == channelId) ? shutterStateAsByte : b;
                                 }
 
                                 break;
                             case 't': // timer: ch->T<- = // TODO: egyezményre jutni
                                 // TODO: megvalósítani, de előtte átgondolni, mi kell.
                                 return;
+                            // tanítás
+                            case 'c':
+                                for (int i = 0; i < chCount; i++)
+                                {
+                                    //channelControl += (i == channelId) ? value[0] : 'x';
+                                    retArray[retArray.Length - (2 * chCount) + i] = Convert.ToByte((i + 1 == channelId) ? 'c' : 'x');
+                                }
+
+                                for (int i = 0; i < chCount; i++)
+                                {
+                                    retArray[retArray.Length - chCount + i] = b;
+                                }
+
+                                break;
                             default:
                                 break;
                         }
                         #endregion
 
                         // küldés
-                        Radio.Instance.SendMessage(retArray);
+                        if (!Radio.Instance.SendMessage(retArray))
+                            Console.WriteLine("Failed to send message on radio");
 
                         #region Redőny kód 2014.10.16 előtt
                         //if (eqPos == 4)
@@ -746,7 +786,7 @@ namespace iContrAll.TcpServer
                     Console.WriteLine("InnerException: {0}", e.InnerException.Message);
                 }
             }
-            Console.WriteLine("Sent on radio: {0}", message);
+            //Console.WriteLine("Sent on radio: {0}", message);
             //Console.WriteLine("Radio osztaly letezik SendMessage után??? {0}", (Radio.Instance == null) ? "NEM" : "IGEN");
             //Console.WriteLine("Radio allapotja: " + Radio.Instance.state);
 		}
@@ -977,6 +1017,9 @@ namespace iContrAll.TcpServer
 			{
 				dal.AddDevice(elemId, elemChannel, elemName, elemTimer, 0);
 			}
+
+            if (elemId.StartsWith("LC1"))
+                SendCommandOnRadio(System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + elemId + "67");
 
 		}
 
