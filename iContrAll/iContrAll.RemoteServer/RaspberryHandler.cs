@@ -14,25 +14,78 @@ namespace iContrAll.RemoteServer
 		public SslStream SslStream { get; set; }
 
 
+        public bool Connected { get { return TcpChannel.Connected; } }
+        public bool CanWrite { get { return SslStream.CanWrite; } }
 
-		internal void Close()
+        public delegate void RemoveRaspberryEH(RaspberryHandler rh);
+        public event RemoveRaspberryEH RemoveRaspberry;
+
+		public void Close()
 		{
-			SslStream.Close();
-			TcpChannel.Close();
+            try
+            {
+                if (this.RemoveRaspberry != null)
+                {
+                    this.RemoveRaspberry(this);
+                }
+                SslStream.Close();
+                TcpChannel.Close();
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Exception while closing Client connection {0}", Id);
+            }
 		}
 
-		internal byte[] Read()
-		{
-			byte[] readBuffer = new byte[32768];
-			int numberOfBytesRead = SslStream.Read(readBuffer, 0, readBuffer.Length);
+        public int Read(byte[] buffer)
+        {
+            int numberOfBytesRead = -1;
+            try
+            {
+                if (SslStream.CanRead)
+                    numberOfBytesRead = SslStream.Read(buffer, 0, buffer.Length);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception while reading from Raspberry {0}", Id);
+                Console.WriteLine(ex.Message);
+                if (ex.InnerException != null)
+                { Console.WriteLine(ex.InnerException.Message); }
+            }
+            return numberOfBytesRead;
+        }
 
-			return readBuffer;
-		}
+        public bool Write(byte[] message, int numberOfBytesRead)
+        {
+            try
+            {
+                if (!TcpChannel.Connected)
+                {
+                    Console.WriteLine("Raspberry is not connected {0}", Id);
+                    return false;
+                }
+                if (SslStream.CanWrite)
+                {
+                    SslStream.Write(message, 0, numberOfBytesRead);
+                    Console.WriteLine("SentToRaspberry {0}", Encoding.UTF8.GetString(message, 0, numberOfBytesRead));
 
-		internal void Write(byte[] sendBuffer)
-		{
-			SslStream.Write(sendBuffer);
-		}
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine("Cannot write to sslStream at {0}", Id);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception while trying to write to Raspberry {0}", Id);
+                Console.WriteLine(ex.Message);
+                if (ex.InnerException != null)
+                    Console.WriteLine(ex.InnerException);
+                return false;
+            }
+        }
 
 		internal void SendCreateTunnelFor(string msg)
 		{

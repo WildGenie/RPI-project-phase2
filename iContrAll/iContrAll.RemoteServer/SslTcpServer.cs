@@ -25,7 +25,7 @@ namespace iContrAll.RemoteServer
         static X509Certificate serverCertificate = null;
         // The certificate parameter specifies the name of the file  
         // containing the machine certificate. 
-        public static void RunServer(string certificate, string password, int raspberryPort = 1123, int clientPort = 1124)
+        public static void RunServer(string certificate, string password, int raspberryPort = 1125, int clientPort = 1124)
         {
             try
             {
@@ -126,8 +126,11 @@ namespace iContrAll.RemoteServer
 
         static void HandleRaspberry(object clientParam)
         {
+            string id = string.Empty;
             TcpClient client = null;
             SslStream sslStream = null;
+            
+            bool closeSslStream = true;
             try 
             {
                 client = (TcpClient)clientParam;
@@ -135,7 +138,7 @@ namespace iContrAll.RemoteServer
                 Console.WriteLine("HandleRaspberry {0}", client.Client.RemoteEndPoint.ToString());
                 // A client has connected. Create the SslStream using the client's network stream.
                 sslStream = new SslStream(client.GetStream(), false);
-            
+                
                 Console.WriteLine("Authentication started");
                 sslStream.AuthenticateAsServer(serverCertificate,
                     true, SslProtocols.Tls, true);
@@ -148,6 +151,8 @@ namespace iContrAll.RemoteServer
 
                 byte[] buffer = new byte[32768];
                 int numberOfBytesRead = -1;
+
+                RaspberryHandler currentRaspberry = new RaspberryHandler();
 
                 while (true)
                 {
@@ -173,6 +178,10 @@ namespace iContrAll.RemoteServer
                     {
                         //Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, tcpClient.RemoteEndPoint.ToString());
                         Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);//, tcpClient.RemoteEndPoint.ToString());
+                        lock(listSyncObject)
+                        {
+                            raspberryList.Remove(currentRaspberry);
+                        }
                         break;
                     }
 
@@ -185,6 +194,7 @@ namespace iContrAll.RemoteServer
                         if (message.Type == MessageType.IdentityMsg && message.Length == 10)
                         {
                             RaspberryHandler rh = new RaspberryHandler() { Id = message.Content, SslStream = sslStream, TcpChannel = client };
+                            currentRaspberry = rh;
                             lock (listSyncObject)
                             {
                                 List<RaspberryHandler> sameRaspberries = raspberryList.Where(r => r.Id == rh.Id).ToList();
@@ -209,6 +219,7 @@ namespace iContrAll.RemoteServer
                             }
                         }
                         else
+                            // válasz érkezett a CreateThreadFor Client-re, egy új socket
                             if (message.Type == MessageType.CreateThreadFor)
                             {
                                 Console.WriteLine("CreateTunnelFor request from {0}", client.Client.RemoteEndPoint.ToString());
@@ -216,24 +227,23 @@ namespace iContrAll.RemoteServer
                                 {
                                     List<ClientHandler> cHandlers = clientList.Where(ch => ch.Identifier == message.Content && ch.Connected).ToList();
 
+                                    RaspberryHandler rh = new RaspberryHandler() { SslStream = sslStream, TcpChannel = client };
                                     if (cHandlers.Count == 1)
                                     {
-                                    
-                                            Tunnel t = new Tunnel(sslStream, cHandlers.First());
-                                            breakIt = true;
-                                            break;
+                                        rh.Id = cHandlers.First().DemandedRaspberryId;
+                                        // itt párosítjuk a jelenlegi raspberry csatlakozás sslStream-jét az erre a válaszra váró félretett klienssel.
+                                        Tunnel t = new Tunnel(rh, cHandlers.First());
+                                        // az egész while ciklust megszakítjuk, a csatorna kommunikáció maradt csak, nem itt kell lesni a raspberry üzeneteit
+                                        breakIt = true;
+                                        closeSslStream = false;
+                                        // a maradék üzenetet eldobjuk, épp eleget tudunk
+                                        break;
                                     }
-                                    //foreach (var ch in chandlers)
-                                    //{
-                                    //    Tunnel t = new Tunnel(sslStream, ch);
-                                    //}
-
                                 }
                             }
                     }
                     if (breakIt) break;
                 }
-
             }
             catch (AuthenticationException e)
             {
@@ -242,7 +252,7 @@ namespace iContrAll.RemoteServer
                 {
                     Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
                 }
-                Console.WriteLine("Authentication failed - closing the connection.");
+                Console.WriteLine("Authentication failed - closing connection.");
                 if (sslStream!=null)
                     sslStream.Close();
                 if (client != null)
@@ -260,18 +270,31 @@ namespace iContrAll.RemoteServer
             }
             finally
             {
-                // The client stream will be closed with the sslStream 
-                // because we specified this behavior when creating 
-                // the sslStream.
-                if (sslStream != null)
-                    sslStream.Close();
-                if (client != null)
-                    client.Close();
+                // akkor zárjuk, ha a fő kommunikációs socket szűnik meg. A Tunnel socket esetében nem zárunk finally-be.
+                if (closeSslStream)
+                {
+                    lock(listSyncObject)
+                    {
+                        var rhs = raspberryList.Where(r => r.SslStream == sslStream);
+                        foreach (var r in rhs)
+                        {
+                            raspberryList.Remove(r);
+                        }
+                    }
+                    // The client stream will be closed with the sslStream 
+                    // because we specified this behavior when creating 
+                    // the sslStream.
+                    if (sslStream != null)
+                        sslStream.Close();
+                    if (client != null)
+                        client.Close();
+                }
             }
         }
 
         static void HandleClient(object clientParam)
         {
+            bool closeSslStream = true;
             TcpClient client = null;
             SslStream sslStream = null;
             try
@@ -281,7 +304,6 @@ namespace iContrAll.RemoteServer
                 // A client has connected. Create the  
                 // SslStream using the client's network stream.
                 sslStream = new SslStream(client.GetStream(), false);
-                // Authenticate the server but don't require the client to authenticate. 
 
                 Console.WriteLine("Authentication STARTED at {0}", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
                 sslStream.AuthenticateAsServer(serverCertificate, true, SslProtocols.Ssl3, true);
@@ -324,8 +346,8 @@ namespace iContrAll.RemoteServer
                                     // Kérés a raspberry-hez, hogy indítson új csatornát amin aztán ezzel a klienssel fog kommunikálni.
                                     rh.First().SendCreateTunnelFor(client.Client.RemoteEndPoint.ToString());
 
-                                    ClientHandler ch = new ClientHandler(client, sslStream);
-
+                                    ClientHandler ch = new ClientHandler(client, sslStream) { DemandedRaspberryId = m.Content };
+                                    ch.RemoveClient += ch_RemoveClient;
                                     List<Message> tempMsgs = new List<Message>();
                                     for (int j = i + 1; j < messageBuffer.Count; j++)
                                     {
@@ -335,7 +357,12 @@ namespace iContrAll.RemoteServer
                                     ch.MessageBuffer = tempMsgs;
 
                                     clientList.Add(ch);
-
+                                    closeSslStream = false;
+                                    breakIt = true;
+                                    break;
+                                }
+                                else
+                                {
                                     breakIt = true;
                                     break;
                                 }
@@ -375,10 +402,21 @@ namespace iContrAll.RemoteServer
                 //// The client stream will be closed with the sslStream 
                 //// because we specified this behavior when creating 
                 //// the sslStream.
-                if (sslStream != null)
-                    sslStream.Close();
-                if (client != null)
-                    client.Close();
+                if (closeSslStream)
+                {
+                    if (sslStream != null)
+                        sslStream.Close();
+                    if (client != null)
+                        client.Close();
+                }
+            }
+        }
+
+        static void ch_RemoveClient(ClientHandler ch)
+        {
+            lock(listSyncObject)
+            {
+                clientList.Remove(ch);
             }
         }
 

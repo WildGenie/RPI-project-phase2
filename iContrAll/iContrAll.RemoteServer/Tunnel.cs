@@ -9,13 +9,13 @@ namespace iContrAll.RemoteServer
 {
     class Tunnel
     {
-        public SslStream Rasberry { get; set; }
+        public RaspberryHandler Rasberry { get; set; }
         public ClientHandler Client { get; set; }
 
         Thread raspberryThread;
         Thread clientThread;
 
-        public Tunnel(SslStream rh, ClientHandler ch)
+        public Tunnel(RaspberryHandler rh, ClientHandler ch)
         {
             this.Rasberry = rh;
             this.Client = ch;
@@ -24,7 +24,7 @@ namespace iContrAll.RemoteServer
             {
                 byte[] buffer = BuildMessage((byte)m.Type, Encoding.UTF8.GetBytes(m.Content));
                 if (rh.CanWrite)
-                    rh.Write(buffer);
+                    rh.Write(buffer, buffer.Length);
             }
 
             raspberryThread = new Thread(ListenForRasberryMessages);
@@ -65,9 +65,10 @@ namespace iContrAll.RemoteServer
                     if (numberOfBytesRead >= 0)
                         Console.WriteLine("MessageFromClient: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
                 }
-                catch (ArgumentOutOfRangeException)
+                catch (ArgumentOutOfRangeException ex)
                 {
                     Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
+                    Console.WriteLine(ex.ToString());
                     continue;
                 }
                 catch (Exception e)
@@ -85,12 +86,27 @@ namespace iContrAll.RemoteServer
                 {
                     //Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, tcpClient.RemoteEndPoint.ToString());
                     Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);//, tcpClient.RemoteEndPoint.ToString());
+
+                    // kliens megszüntette a kapcsolatot, számoljuk fel ezt a tunnelt
+                    // értesíteni kell a Raspberry-t és a klienst is eltávolítjuk a szerver nyilvántartásából
+                    Rasberry.Close();
+                    Client.Close();
+
                     break;
                 }
 
                 try
                 {
-                    Rasberry.Write(buffer, 0, numberOfBytesRead);
+                    bool successWrite = Rasberry.Write(buffer, numberOfBytesRead);
+                    if (!successWrite)
+                    {
+                        Console.WriteLine("Raspberry {0} is not connected.", Rasberry.Id);
+                        Console.WriteLine("Closing connection");
+                        // Close tunnel, close connection to raspberry.
+                        Client.Close();
+                        Rasberry.Close();
+                        break;
+                    }
                     Console.WriteLine("SentToRaspberry: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
                 }
                 catch (Exception e)
@@ -117,8 +133,9 @@ namespace iContrAll.RemoteServer
             {
                 try
                 {
-                    numberOfBytesRead = Rasberry.Read(buffer, 0, buffer.Length);
-                    Console.WriteLine("MessageFromRaspberry: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
+                    numberOfBytesRead = Rasberry.Read(buffer);
+                    if (numberOfBytesRead >= 0)
+                        Console.WriteLine("MessageFromRaspberry: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
                 }
                 catch (ArgumentOutOfRangeException)
                 {
@@ -140,6 +157,8 @@ namespace iContrAll.RemoteServer
                 if (numberOfBytesRead <= 0)
                 {
                     Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);//, tcpClient.RemoteEndPoint.ToString());
+                    Rasberry.Close();
+                    Client.Close();
                     break;
                 }
 
@@ -156,6 +175,7 @@ namespace iContrAll.RemoteServer
                         Rasberry.Close();
                         break;
                     }
+                    Console.WriteLine("SentToClient: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
                 }
                 catch (Exception ex)
                 {

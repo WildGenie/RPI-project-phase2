@@ -14,10 +14,15 @@ namespace iContrAll.RemoteServer
 
         // IP + port  vagy ami az üzenetben volt
         public string Identifier { get; private set; }
+
+        public string DemandedRaspberryId { get; set; }
         
         public List<Message> MessageBuffer { get; set; }
 
         public bool Connected { get { return tcpChannel.Connected; } }
+
+        public delegate void RemoveClientEH(ClientHandler ch);
+        public event RemoveClientEH RemoveClient;
 
         public ClientHandler(TcpClient tcpChannel, SslStream sslStream)
         {
@@ -81,6 +86,10 @@ namespace iContrAll.RemoteServer
         {
             try
             {
+                if (this.RemoveClient!=null)
+                {
+                    this.RemoveClient(this);
+                }
                 sslStream.Close();
                 tcpChannel.Close();
             }
