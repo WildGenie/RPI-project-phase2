@@ -47,8 +47,8 @@ namespace iContrAll.TcpServer
             this.listenThread = new Thread(new ThreadStart(ListenForLocalLANClients));
             this.listenThread.Start();
 
-            //this.remoteServerThread = new Thread(new ThreadStart(RemoteServerManaging));
-            //this.remoteServerThread.Start();
+            this.remoteServerThread = new Thread(new ThreadStart(RemoteServerManaging));
+            this.remoteServerThread.Start();
 		}
 
         //private void ProcessReceivedRadioMessage(RadioMessageEventArgs e)
