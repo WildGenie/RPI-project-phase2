@@ -30,9 +30,11 @@ namespace iContrAll.Launcher
             Process process = new Process();
             process.StartInfo.FileName = "mono";
             if (debug)
-                process.StartInfo.Arguments = "/home/pi/iContrAll/bin/Debug/iContrAll.TcpServer.exe 79.121.25.151 1123 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
+                process.StartInfo.Arguments = "/home/pi/iContrAll/bin/Debug/iContrAll.TcpServer.exe alpha.icontrall.hu 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
+                //process.StartInfo.Arguments = "/home/pi/iContrAll/bin/Debug/iContrAll.TcpServer.exe 89.133.26.35 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
             else
-                process.StartInfo.Arguments = "/home/pi/iContrAll/bin/iContrAll.TcpServer.exe 79.121.25.151 1123 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
+                process.StartInfo.Arguments = "/home/pi/iContrAll/bin/iContrAll.TcpServer.exe alpha.icontrall.hu 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
+                //process.StartInfo.Arguments = "/home/pi/iContrAll/bin/iContrAll.TcpServer.exe 89.133.26.35 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
             process.EnableRaisingEvents = true;
             process.Exited += LaunchIfCrashed;
 

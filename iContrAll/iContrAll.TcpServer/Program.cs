@@ -15,7 +15,7 @@ namespace iContrAll.TcpServer
         {
             new SsdpServer(new string[] { "urn:schemas-upnp-org:device:RlanDevice:1" });
             string remoteServerAddress = "79.172.214.136";
-            int remoteServerPort = 1123;
+            int remoteServerPort = 1125;
             string certificateName = "alpha.icontrall.hu";
             string certificatePath = "/home/pi/server.crt";
             string certificatePassphrase = "allcontri";
