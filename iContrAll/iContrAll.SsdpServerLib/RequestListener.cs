@@ -134,12 +134,14 @@ namespace iContrAll.SsdpServerLib
                     {
                         Console.WriteLine("M-SEARCH Received from: {0}", buffer.SenderIPEndPoint.ToString());
                         // Console.WriteLine("Datagram:\n{0}", Encoding.UTF8.GetString(dgram));
+                        //Console.WriteLine(Encoding.UTF8.GetString(dgram));
                         if (IsDgramRaspberryId(dgram))
                         {
+                            //Console.WriteLine("VÁLASZOLUNK!");
                             Socket responseSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                             byte[] sendbuf = CreateAliveResponse(getLocalIPAddress(), identifier, identifier, 900);
                             //byte[] sendbuf = Encoding.UTF8.GetBytes(identifier);
-
+                            //Console.WriteLine(Encoding.UTF8.GetString(sendbuf));
                             responseSocket.SendTo(sendbuf, buffer.SenderIPEndPoint);
                             //Console.WriteLine("Response sent to: {0}\n{1}", buffer.SenderIPEndPoint, Encoding.UTF8.GetString(sendbuf));
                         }
