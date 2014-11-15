@@ -236,9 +236,12 @@ namespace iContrAll.SPIRadio
                 }
                 c++;
             }
-            Console.WriteLine("CTS failed");
-            if (c >= 255) return false;
-            
+
+            if (c >= 255)
+            {
+                Console.WriteLine("CTS failed");
+                return false;
+            }
             return true;
         }
 
