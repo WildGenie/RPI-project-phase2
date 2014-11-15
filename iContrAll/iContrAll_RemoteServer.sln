@@ -5,6 +5,8 @@ VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iContrAll.RemoteServer", "iContrAll.RemoteServer\iContrAll.RemoteServer.csproj", "{DC6578BB-8A48-4E06-8D17-44E63760715F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iContrAll.RemoteServer.Launcher", "iContrAll.RemoteServer.Launcher\iContrAll.RemoteServer.Launcher.csproj", "{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,16 @@ Global
 		{DC6578BB-8A48-4E06-8D17-44E63760715F}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{DC6578BB-8A48-4E06-8D17-44E63760715F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{DC6578BB-8A48-4E06-8D17-44E63760715F}.Release|Win32.ActiveCfg = Release|Any CPU
+		{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}.Release|Win32.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
