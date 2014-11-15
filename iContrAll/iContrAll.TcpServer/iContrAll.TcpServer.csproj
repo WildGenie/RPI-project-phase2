@@ -54,7 +54,6 @@
     <Compile Include="LocalConnectedDevice.cs" />
     <Compile Include="Place.cs" />
     <Compile Include="RemoteConnectedDevice.cs" />
-    <Compile Include="RemoteServerManager.cs" />
     <Compile Include="ServiceHandler.cs" />
     <Compile Include="DataAccesLayer.cs" />
     <Compile Include="Device.cs" />
