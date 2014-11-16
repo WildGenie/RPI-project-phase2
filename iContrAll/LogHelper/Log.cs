@@ -25,7 +25,7 @@ namespace LogHelper
                 if (args == null || args.Length == 0) return;
                 if (args.Length > 1)
                 {
-                    WriteLine(string.Format(args[0].ToString(), args.Skip(1)));
+                    WriteLine(string.Format(args[0].ToString(), args.Skip(1).ToArray()));
                 }
                 else WriteLine(args[0].ToString());
             }
