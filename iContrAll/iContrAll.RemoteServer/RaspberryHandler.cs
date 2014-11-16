@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LogHelper;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Security;
@@ -30,10 +31,11 @@ namespace iContrAll.RemoteServer
                 }
                 SslStream.Close();
                 TcpChannel.Close();
+                Log.WriteLine("RaspberryHandler {0} closed", Id);
             }
             catch (Exception)
             {
-                Console.WriteLine("Exception while closing Client connection {0}", Id);
+                Log.WriteLine("Exception while closing Client connection {0} in {1}", Id, "RaspberryHandler.Close()");
             }
 		}
 
@@ -47,10 +49,8 @@ namespace iContrAll.RemoteServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception while reading from Raspberry {0}", Id);
-                Console.WriteLine(ex.Message);
-                if (ex.InnerException != null)
-                { Console.WriteLine(ex.InnerException.Message); }
+                Log.WriteLine("Exception while reading from Raspberry {0} in {1}", Id, "RaspberryHandler.Read()");
+                Log.WriteLine(ex.ToString());
             }
             return numberOfBytesRead;
         }
@@ -61,30 +61,28 @@ namespace iContrAll.RemoteServer
             {
                 if (!TcpChannel.Connected)
                 {
-                    Console.WriteLine("Raspberry is not connected {0}", Id);
+                    Log.WriteLine("Raspberry is not connected {0} in {1}", Id, "RaspberryHandler.Write()");
                     return false;
                 }
                 if (SslStream.CanWrite)
                 {
                     SslStream.Write(message, 0, numberOfBytesRead);
-                    Console.WriteLine("SentToRaspberry {0}", Encoding.UTF8.GetString(message, 0, numberOfBytesRead));
+                    Log.WriteLine("SentToRaspberry {1} {0} in {2}", Encoding.UTF8.GetString(message, 0, numberOfBytesRead), Id, "RaspberryHandler.Write()");
 
                     return true;
                 }
                 else
                 {
-                    Console.WriteLine("Cannot write to sslStream at {0}", Id);
+                    Log.WriteLine("Cannot write to sslStream at {0} in {1}", Id, "RaspberryHandler.Write()");
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception while trying to write to Raspberry {0}", Id);
-                Console.WriteLine(ex.Message);
-                if (ex.InnerException != null)
-                    Console.WriteLine(ex.InnerException);
-                return false;
+                Log.WriteLine("Exception while trying to write to Raspberry {0} in {1}", Id, "RaspberryHandler.Write()");
+                Log.WriteLine(ex.ToString());
             }
+            return false;
         }
 
 		internal void SendCreateTunnelFor(string msg)
@@ -104,7 +102,6 @@ namespace iContrAll.RemoteServer
 			System.Buffer.BlockCopy(message, 0, answer, msgNbrArray.Length + lengthArray.Length, message.Length);
 
 			SslStream.Write(answer);
-		
 		}
 	}
 }

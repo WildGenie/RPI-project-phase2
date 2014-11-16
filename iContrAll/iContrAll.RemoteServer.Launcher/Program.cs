@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LogHelper;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -40,8 +41,8 @@ namespace iContrAll.RemoteServer.Launcher
         private static void LaunchIfCrashed(object o, EventArgs e)
         {
             Process process = (Process)o;
-            Console.WriteLine("Process crashed: {0}", process.StartInfo.FileName);
-            Console.WriteLine(process.ExitCode);
+            Log.WriteLine("!!!!Process crashed: {0}!!!", process.StartInfo.FileName);
+            Log.WriteLine(process.ExitCode);
             if (process.ExitCode != 0)
             {
                 Launch();
