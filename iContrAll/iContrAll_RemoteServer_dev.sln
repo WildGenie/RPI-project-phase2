@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iContrAll.SPIRadioWithWiringPi", "iContrAll.SPIRadioWithWiringPi\iContrAll.SPIRadioWithWiringPi.csproj", "{607B15CE-1746-4C52-84AC-F21D1CF832AA}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iContrAll.RemoteServer", "iContrAll.RemoteServer\iContrAll.RemoteServer.csproj", "{DC6578BB-8A48-4E06-8D17-44E63760715F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iContrAll.RemoteServer.Launcher", "iContrAll.RemoteServer.Launcher\iContrAll.RemoteServer.Launcher.csproj", "{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogHelper", "LogHelper\LogHelper.csproj", "{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -73,6 +75,16 @@ Global
 		{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{C82BDCC9-976D-4F54-B39E-DEA8D51B829C}.Release|Win32.ActiveCfg = Release|Any CPU
+		{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}.Release|Win32.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
