@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,8 @@ namespace LogHelper
 {
     public static class Log
     {
+        private static object logLockObject = new object();
+
         private static string fileName
         {
             get
@@ -40,38 +43,44 @@ namespace LogHelper
             }
         }
 
-        private static async void Write(object s)
+        private static void Write(object s)
         {
             Console.Write(s);
             try
             {
-                using (var writer = new StreamWriter(fileName, append: true))
+                lock (logLockObject)
                 {
-                    await writer.WriteAsync(s.ToString());
+                    using (var writer = new StreamWriter(fileName, append: true))
+                    {
+                        writer.Write(s.ToString());
+                    }
                 }
             }
-            catch(Exception)
-            { Console.WriteLine("Log.Write: StreamWriter exception"); }
+            catch(Exception ex)
+            { Console.WriteLine("Log.Write: StreamWriter exception"); Console.WriteLine(ex); }
             
         }
 
-        private static async void WriteLine(string message)
+        private static void WriteLine(string message)
         {
             Console.WriteLine(message);
             try
             {
-                using (var writer = new StreamWriter(fileName, append: true))
+                lock (logLockObject)
                 {
-                    await writer.WriteLineAsync(TimeStampMessage(message));
+                    using (var writer = new StreamWriter(fileName, append: true))
+                    {
+                        writer.WriteLine(TimeStampMessage(message));
+                    }
                 }
             }
-            catch (Exception)
-            { Console.WriteLine("Log.Write: StreamWriter exception"); }
+            catch (Exception ex)
+            { Console.WriteLine("Log.Write: StreamWriter exception"); Console.WriteLine(ex); }
         }
 
         private static string TimeStampMessage(string message)
         {
-            return string.Format("[{0}] {1}", DateTime.Now.ToString("o"), message);
+            return string.Format("[{0}] {1}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture), message);
         }
     }
 }
