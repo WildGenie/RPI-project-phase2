@@ -30,6 +30,8 @@ namespace iContrAll.TcpServer
         string certificatePath;
         string certificatePassphrase;
 
+        Timer remotePingTimer;
+
 		public Server(int port, string remoteServerAddress, int remoteServerPort,
             string serverCertificateName, string certificatePath, string certificatePassphrase)
 		{
@@ -262,42 +264,19 @@ namespace iContrAll.TcpServer
 
         private void RemoteServerManaging()
         {
-            try
+            // blokkol, amíg nem sikerül csatlakozni
+            ConnectToRemoteServer();
+
+            var readBuffer = new byte[bufferSize];
+            int numberOfBytesRead = -1;
+
+            while (true)
             {
-                if (!ConnectToRemoteServer()) return;
-                var readBuffer = new byte[bufferSize];
-                int numberOfBytesRead = -1;
-
-                if (sslStream.CanRead)
+                try
                 {
-                    while (true)
+                    if ((numberOfBytesRead = sslStream.Read(readBuffer, 0, bufferSize)) > 0)
                     {
-                        try
-                        {
-                            numberOfBytesRead = sslStream.Read(readBuffer, 0, bufferSize);
-                        }
-                        catch (ArgumentOutOfRangeException)
-                        {
-                            Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
-                            continue;
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("Exception while reading from socket {0} in Server.RemoteServerManaging", this.remoteServer.Client.RemoteEndPoint);
-                            Console.WriteLine(ex.Message);
-                            if (ex.InnerException != null)
-                            { Console.WriteLine(ex.InnerException.Message); }
-
-                            break;
-                        }
-
-                        if (numberOfBytesRead <= 0)
-                        {
-                            Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, remoteServer.Client.RemoteEndPoint.ToString());
-                            break;
-                        }
-
-                        Console.WriteLine("Message (length={1}) received from: {0} at {2}", remoteServer.Client.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
+                        Console.WriteLine("Message (length={1}) received from: {0} at {2}", remoteServer.Client.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
 
                         byte[] readBytes = readBuffer.Take(numberOfBytesRead).ToArray();
 
@@ -306,16 +285,36 @@ namespace iContrAll.TcpServer
                             ProcessMessage(message);
                         }
                     }
+                    else
+                    {
+                        Console.WriteLine("ZeroBytesRead: {0} from remoteServer {1}", numberOfBytesRead, remoteServer.Client.RemoteEndPoint.ToString());
+                        remotePingTimer.Dispose();
+                        sslStream.Close();
+                        remoteServer.Close();
+                        Thread.Sleep(10000);
+                    }
                 }
-            }
-            finally
-            {
-                sslStream.Close(); // including clientStream.Close();
-                remoteServer.Close();
-                Console.WriteLine("RemoteServer zár");
-
-                Thread.Sleep(5000);
-                RemoteServerManaging();
+                //catch (ArgumentOutOfRangeException)
+                //{
+                //    Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
+                //    continue;
+                //}
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Exception while reading from socket {0} in Server.RemoteServerManaging", this.remoteServer.Client.RemoteEndPoint);
+                    Console.WriteLine(ex.Message);
+                    if (ex.InnerException != null)
+                    { Console.WriteLine(ex.InnerException.Message); }
+                    remotePingTimer.Dispose();
+                    sslStream.Close();
+                    remoteServer.Close();
+                    Thread.Sleep(10000);
+                }
+                finally
+                {
+                    // blokkol amíg nem csatlakozott újra
+                    ConnectToRemoteServer();
+                }
             }
         }
 
@@ -464,13 +463,15 @@ namespace iContrAll.TcpServer
 
 		}
 
-        private bool ConnectToRemoteServer()
+        private void ConnectToRemoteServer()
         {
-            while (true)
+            while (this.remoteServer == null || this.remoteServer.Client == null || !this.remoteServer.Connected)
             {
+                //if (this.remoteServer == null) this.remoteServer = new TcpClient();
+                this.remoteServer = new TcpClient();
                 try
                 {
-                    this.remoteServer = new TcpClient(remoteServerAddress, remoteServerPort);
+                    this.remoteServer.Connect(remoteServerAddress, remoteServerPort);
                     Console.WriteLine("Connected to remoteserver");
                     this.sslStream = new SslStream(
                         remoteServer.GetStream(),
@@ -479,14 +480,15 @@ namespace iContrAll.TcpServer
                         new LocalCertificateSelectionCallback(CertificateSelectionCallback)
                     );
 
-                    X509Certificate cert = new X509Certificate2(certificatePath, certificatePassphrase); //"/home/pi/SslClientTest2/bin/Debug/server.p12", "allcontri");
+                    X509Certificate cert = new X509Certificate2(certificatePath, certificatePassphrase);
                     X509CertificateCollection certs = new X509CertificateCollection();
                     certs.Add(cert);
 
                     // The server name must match the name on the server certificate. 
                     try
                     {
-                        sslStream.AuthenticateAsClient(serverCertificateName,
+                        sslStream.AuthenticateAsClient(
+                            serverCertificateName,
                             certs,
                             SslProtocols.Tls,
                             false); // check cert revokation);
@@ -500,7 +502,6 @@ namespace iContrAll.TcpServer
                         }
                         Console.WriteLine("Authentication failed - closing the connection.");
                         remoteServer.Close();
-                        return false;
                     }
 
                     // Sending the device id to the server inside the login message
@@ -509,19 +510,17 @@ namespace iContrAll.TcpServer
                     //NetworkStream stream = remoteServer.GetStream();
                     sslStream.Write(data, 0, data.Length);
                     sslStream.Flush();
-
-                    return true;
                 }
                 catch (ArgumentNullException e)
                 {
                     Console.WriteLine("ArgumentNullException: {0}", e);
-                    Thread.Sleep(5000);
+                    remoteServer.Close();
+
                 }
                 catch (SocketException)
                 {
                     Console.WriteLine("SocketException: Cannot connect to remote server.");
-                    //Console.WriteLine(e.Message);
-                    Thread.Sleep(5000);
+                    remoteServer.Close();
                 }
                 catch (Exception e)
                 {
@@ -531,23 +530,38 @@ namespace iContrAll.TcpServer
                     {
                         Console.WriteLine(e.InnerException.Message);
                     }
+                    remoteServer.Close();
                 }
-                finally
-                {
 
-                }
+                if (this.remoteServer == null || this.remoteServer.Client == null || !this.remoteServer.Connected) 
+                    Thread.Sleep(10000);
+
+                //try
+                //{
+                //    if (!this.remoteServer.Connected) Thread.Sleep(10000);
+                //}
+                //catch(Exception e)
+                //{
+                //    Thread.Sleep(10000);
+                //}
+                
             }
+
+            this.remotePingTimer = new Timer(PingRemoteServer, null, 60000, 60000);
         }
 
-        private void PingRemoteServer()
+        private void PingRemoteServer(object state)
         {
             try
             {
-                this.sslStream.Write(BuildMessage(-3, null));
+                this.sslStream.Write(BuildMessage((int)MessageType.PingMessage, new byte[] { }));
                 this.sslStream.Flush();
             }
-            catch(Exception)
+            catch (Exception)
             {
+                Console.WriteLine("RemoteServerPing failed");
+                // stop the ping
+                remotePingTimer.Dispose();
                 // we need to reconnect
                 ConnectToRemoteServer();
             }
