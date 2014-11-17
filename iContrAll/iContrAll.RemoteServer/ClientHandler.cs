@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
@@ -16,6 +17,8 @@ namespace iContrAll.RemoteServer
         // IP + port  vagy ami az üzenetben volt
         public string Id { get; private set; }
 
+        public EndPoint EndPoint { get { return tcpChannel.Client.RemoteEndPoint; } }
+
         public string DemandedRaspberryId { get; set; }
         
         public List<Message> MessageBuffer { get; set; }
@@ -25,11 +28,17 @@ namespace iContrAll.RemoteServer
         public delegate void RemoveClientEH(ClientHandler ch);
         public event RemoveClientEH RemoveClient;
 
-        public ClientHandler(TcpClient tcpChannel, SslStream sslStream)
+        public ClientHandler(TcpClient tcpChannel, SslStream sslStream, RemoveClientEH removeClient)
         {
             this.tcpChannel = tcpChannel;
             this.sslStream = sslStream;
             this.Id = this.tcpChannel.Client.RemoteEndPoint.ToString();
+            this.RemoveClient += removeClient;
+        }
+
+        public ClientHandler()
+        {
+            // TODO: ebből még baj lesz, miért nem oldom meg normálisan
         }
 
         public bool Write(byte[] message, int numberOfBytesRead)
@@ -44,6 +53,7 @@ namespace iContrAll.RemoteServer
                 if (sslStream.CanWrite)
                 {
                     sslStream.Write(message, 0, numberOfBytesRead);
+                    sslStream.Flush();
                     Log.WriteLine("SentToClient {1} {0} in {2}", Encoding.UTF8.GetString(message, 0, numberOfBytesRead), Id, "ClientHandler.Write()");
 
                     return true;

@@ -108,148 +108,144 @@ namespace iContrAll.RemoteServer
             }
         }
 
-        static void HandleRaspberry(object clientParam)
+        static void HandleRaspberry(object raspberryParam)
         {
             string id = string.Empty;
-            TcpClient client = null;
+            TcpClient raspberryClient = null;
             SslStream sslStream = null;
-            
+            RaspberryHandler raspberry = null;
             bool closeSslStream = true;
             try 
             {
-                client = (TcpClient)clientParam;
+                raspberryClient = (TcpClient)raspberryParam;
                 
-                Log.WriteLine("HandleRaspberry {0}", client.Client.RemoteEndPoint.ToString());
+                Log.WriteLine("HandleRaspberry {0}", raspberryClient.Client.RemoteEndPoint.ToString());
+                
                 // A client has connected. Create the SslStream using the client's network stream.
-                sslStream = new SslStream(client.GetStream(), false);
+                sslStream = new SslStream(raspberryClient.GetStream(), false);
 
-                Log.WriteLine("STARTED Raspberry Authentication {0}", client.Client.RemoteEndPoint.ToString());
-                sslStream.AuthenticateAsServer(serverCertificate,
-                    true, SslProtocols.Tls, true);
-                Log.WriteLine("COMPLETE Raspberry Authentication {0}", client.Client.RemoteEndPoint.ToString()); //, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
-                // Set timeouts for the read and write to 5 seconds.
-                //sslStream.ReadTimeout = 5000;
-                //sslStream.WriteTimeout = 5000;
-                // Read a message from the client.   
-                Log.WriteLine("Waiting for raspberry message...{0}", client.Client.RemoteEndPoint.ToString());
+                Log.WriteLine("STARTED Raspberry Authentication {0}", raspberryClient.Client.RemoteEndPoint.ToString());
+                
+                sslStream.AuthenticateAsServer(serverCertificate, true, SslProtocols.Tls, true);
+                Log.WriteLine("COMPLETE Raspberry Authentication {0}", raspberryClient.Client.RemoteEndPoint.ToString()); //, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
+                
+                Log.WriteLine("Waiting for raspberry message...{0}", raspberryClient.Client.RemoteEndPoint.ToString());
 
                 byte[] buffer = new byte[32768];
                 int numberOfBytesRead = -1;
 
-                RaspberryHandler currentRaspberry = new RaspberryHandler();
-
+                raspberry = new RaspberryHandler(raspberryClient, sslStream, rh_RemoveRaspberry);
+                
                 while (true)
                 {
                     bool breakIt = false;
                     try
                     {
-                        // Read the client's test message.
-                        numberOfBytesRead = sslStream.Read(buffer, 0, buffer.Length);
+                        // Read the raspberry's message.
+                        if ((numberOfBytesRead = raspberry.Read(buffer)) <= 0)
+                        {
+                            Log.WriteLine("{1}: Zerobyte read: {0}", numberOfBytesRead, raspberry.EndPoint);
+                            raspberry.Close();
+                            raspberry = null;
+                            break;
+                        }
                     }
                     catch (ArgumentOutOfRangeException aoe)
                     {
-                        Log.WriteLine("{0}: The size of the message has exceeded the maximum size allowed.", client.Client.RemoteEndPoint.ToString());
+                        Log.WriteLine("{0}: The size of the message has exceeded the maximum size allowed.", raspberry.EndPoint);
                         Log.WriteLine(aoe.ToString());
                         continue;
                     }
                     catch (Exception)
                     {
-                        Log.WriteLine("{0} Exception while reading from socket SslTcpServer.HandleRaspberry", client.Client.RemoteEndPoint.ToString());
+                        Log.WriteLine("{0} Exception while reading from socket SslTcpServer.HandleRaspberry", raspberry.EndPoint);
                         break;
                     }
 
-                    if (numberOfBytesRead <= 0)
-                    {
-                        Log.WriteLine("{1} NumberOfBytesRead: {0}", numberOfBytesRead, client.Client.RemoteEndPoint.ToString());
-                        lock(listSyncObject)
-                        {
-                            raspberryList.Remove(currentRaspberry);
-                        }
-                        break;
-                    }
-
-                    Log.WriteLine("Message (length={1}) received from: {0} at {2}", client.Client.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
+                    // Ha idáig eljutunk, tényleg jött valami üzenet.
+                    Log.WriteLine("Message (length={1}) received from: {0} at {2}", raspberry.EndPoint, numberOfBytesRead, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
 
                     byte[] readBytes = buffer.Take(numberOfBytesRead).ToArray();
+                    
                     foreach (var message in ProcessBuffer(readBytes))
                     {
-                        Log.WriteLine("{2} Message: Type={0} Content={1}", (MessageType)message.Type, message.Content, client.Client.RemoteEndPoint.ToString());
+                        Log.WriteLine("{2} Message: Type={0} Content={1}", (MessageType)message.Type, message.Content, raspberry.EndPoint.ToString());
                         if (message.Type == MessageType.IdentityMsg && message.Length == 10)
                         {
-                            RaspberryHandler rh = new RaspberryHandler() { Id = message.Content, SslStream = sslStream, TcpChannel = client };
-                            rh.RemoveRaspberry += rh_RemoveRaspberry;
-                            currentRaspberry = rh;
+                            raspberry.ResetTimeOutTimer();
+                            // eddig protokollnak megfelelő
                             lock (listSyncObject)
                             {
-                                List<RaspberryHandler> sameRaspberries = raspberryList.Where(r => r.Id == rh.Id).ToList();
-                                //int rc = raspberryList.Count(r => r.Id == rh.Id);
-                                int rc = sameRaspberries.Count;
-                                if (rc <= 0)
+                                // Ha azonos Id-val már létezett, akkor nem adjuk hozzá az újat.
+                                // TODO: átgondolni ezt biztonsági szempontból.
+                                // Nem vicces.
+                                int alreadyConnected = raspberryList.Count(r => r.Id == message.Content);
+
+                                if (alreadyConnected == 0)
                                 {
-
-                                    raspberryList.Add(rh);
-
-                                    Log.WriteLine("Raspberry {0} added to list", rh.Id);
-                                    StringBuilder sb = new StringBuilder();
-                                    Log.WriteLine("Connected Raspberries: ");
-                                    foreach (var r in raspberryList)
-                                    {
-                                        sb.AppendFormat("\tId: {0} -> EndPoint: {1};\n", r.Id, r.TcpChannel.Client.RemoteEndPoint.ToString());
-                                    }
-                                    Log.WriteLine("\t" + sb.ToString());
-                                    sb.Clear();
+                                    raspberry.Id = message.Content;
+                                    raspberryList.Add(raspberry);
+                                    Log.WriteLine("Raspberry {0} added to list", raspberry.Id);
                                 }
                                 else
                                 {
-                                    if (rc == 1)
-                                    {
-                                        Log.WriteLine("!Raspberry duplication!");
-                                        RaspberryHandler rhOld = sameRaspberries.First();
-                                        rhOld.Close();
-                                        rh.Close();
+                                    Log.WriteLine("!!Raspberry with Id={0} already connected!! // {1} times", message.Content, alreadyConnected);
+                                    raspberry.Close();
+                                    raspberry = null;
+                                }
 
-                                        //rhOld.Id = rh.Id;
-                                        //rhOld.SslStream = sslStream;
-                                        //rhOld.TcpChannel = client;
-                                    }
+                                Log.WriteLine("Connected Raspberries: ");
+                                StringBuilder sb = new StringBuilder();
+                                foreach (var r in raspberryList)
+                                {
+                                    sb.AppendFormat("\tId: {0} -> EndPoint: {1};\n", r.Id, r.EndPoint.ToString());
+                                }
+                                Log.WriteLine("\t" + sb.ToString());
+                                sb.Clear();
+                            }
+                        }
+                        else
+                        // válasz érkezett a CreateThreadFor Client-re, egy új socket
+                        if (message.Type == MessageType.CreateThreadFor)
+                        {
+                            raspberry.ResetTimeOutTimer();
+                            Log.WriteLine("CreateTunnelFor request from {0}", raspberry.EndPoint.ToString());
+                            lock (listSyncObject)
+                            {
+                                List<ClientHandler> cHandlers = clientList.Where(ch => ch.Id == message.Content && ch.Connected).ToList();
+
+                                if (cHandlers.Count == 1)
+                                {
+                                    raspberry.Id = cHandlers.First().DemandedRaspberryId;
+                                    // itt párosítjuk a jelenlegi raspberry csatlakozás sslStream-jét az erre a válaszra váró félretett klienssel.
+                                    Tunnel t = new Tunnel(raspberry, cHandlers.First());
+                                    // az egész while ciklust megszakítjuk, a csatorna kommunikáció maradt csak, nem itt kell lesni a raspberry üzeneteit
+                                    breakIt = true;
+                                    closeSslStream = false;
+                                    // a maradék üzenetet eldobjuk, épp eleget tudunk
+                                    break;
                                 }
                             }
                         }
                         else
-                            // válasz érkezett a CreateThreadFor Client-re, egy új socket
-                            if (message.Type == MessageType.CreateThreadFor)
-                            {
-                                Log.WriteLine("CreateTunnelFor request from {0}", client.Client.RemoteEndPoint.ToString());
-                                lock (listSyncObject)
-                                {
-                                    List<ClientHandler> cHandlers = clientList.Where(ch => ch.Id == message.Content && ch.Connected).ToList();
-
-                                    RaspberryHandler rh = new RaspberryHandler() { SslStream = sslStream, TcpChannel = client };
-                                    if (cHandlers.Count == 1)
-                                    {
-                                        rh.Id = cHandlers.First().DemandedRaspberryId;
-                                        // itt párosítjuk a jelenlegi raspberry csatlakozás sslStream-jét az erre a válaszra váró félretett klienssel.
-                                        Tunnel t = new Tunnel(rh, cHandlers.First());
-                                        // az egész while ciklust megszakítjuk, a csatorna kommunikáció maradt csak, nem itt kell lesni a raspberry üzeneteit
-                                        breakIt = true;
-                                        closeSslStream = false;
-                                        // a maradék üzenetet eldobjuk, épp eleget tudunk
-                                        break;
-                                    }
-                                }
-                            }
+                        if (message.Type == MessageType.Ping)
+                        {
+                            Log.WriteLine("PingMessage from {0}", raspberry.Id);
+                            raspberry.ResetTimeOutTimer();
+                        }
                     }
                     if (breakIt) break;
                 }
             }
             catch (AuthenticationException e)
             {
-                Log.WriteLine("Exception: {0}", e.ToString());
                 Log.WriteLine("Authentication failed - closing connection.");
+                Log.WriteLine("Exception: {0}", e.ToString());
+                
                 if (sslStream!=null)
                     sslStream.Close();
-                if (client != null)
-                    client.Close();
+                if (raspberryClient != null)
+                    raspberryClient.Close();
                 return;
             }
             catch(Exception ex)
@@ -259,24 +255,33 @@ namespace iContrAll.RemoteServer
             }
             finally
             {
-                // akkor zárjuk, ha a fő kommunikációs socket szűnik meg. A Tunnel socket esetében nem zárunk finally-be.
+                // akkor zárjuk, ha a fő kommunikációs socket szűnik meg. 
+                // A Tunnel socket esetében nem zárunk finally-ben.
                 if (closeSslStream)
                 {
-                    lock(listSyncObject)
+                    if (raspberry != null)
                     {
-                        var rhs = raspberryList.Where(r => r.SslStream == sslStream);
-                        foreach (var r in rhs)
-                        {
-                            raspberryList.Remove(r);
-                        }
+                        raspberry.Close();
+                        raspberry = null;
+                        //IEnumerable<RaspberryHandler> rhs = null;
+                        //lock (listSyncObject)
+                        //{
+                        //    // TODO: szedjük ki a remove-ból a lock-ot, úgyis itt hívjuk, a close-okat, az meg a remove-ot
+                        //    rhs = raspberryList.Where(r => r.Id == raspberry.Id);
+                        //}
+                        //foreach (var r in rhs)
+                        //{
+                        //    if (r!=null)
+                        //        r.Close();
+                        //}
                     }
                     // The client stream will be closed with the sslStream 
                     // because we specified this behavior when creating 
                     // the sslStream.
                     if (sslStream != null)
                         sslStream.Close();
-                    if (client != null)
-                        client.Close();
+                    if (raspberryClient != null)
+                        raspberryClient.Close();
                 }
             }
         }
@@ -286,70 +291,76 @@ namespace iContrAll.RemoteServer
         static void HandleClient(object clientParam)
         {
             bool closeSslStream = true;
-            TcpClient client = null;
+            TcpClient tcpClient = null;
             SslStream sslStream = null;
+            ClientHandler client = null;
+
             try
             {
-                client = (TcpClient)clientParam;
-                Log.WriteLine("HandleClient started {0}", client.Client.RemoteEndPoint.ToString());
+                tcpClient = (TcpClient)clientParam;
+                Log.WriteLine("HandleClient started {0}", tcpClient.Client.RemoteEndPoint.ToString());
                 // A client has connected. Create the  
                 // SslStream using the client's network stream.
-                sslStream = new SslStream(client.GetStream(), false);
+                sslStream = new SslStream(tcpClient.GetStream(), false);
 
-                Log.WriteLine("STARTED Client Authentication {0}", client.Client.RemoteEndPoint.ToString());
+                Log.WriteLine("STARTED Client Authentication {0}", tcpClient.Client.RemoteEndPoint.ToString());
                 sslStream.AuthenticateAsServer(serverCertificate, true, SslProtocols.Ssl3, true);
 
                 // Set timeouts for the read and write to 5 seconds.
                 //sslStream.ReadTimeout = 5000;
                 //sslStream.WriteTimeout = 5000;
                 // Read a message from the client.   
-                Log.WriteLine("COMPLETED Client Authentication {0}", client.Client.RemoteEndPoint.ToString());
+                Log.WriteLine("COMPLETED Client Authentication {0}", tcpClient.Client.RemoteEndPoint.ToString());
                 int numberOfBytesRead = -1;
 
                 byte[] buffer = new byte[32768];
+
+                client = new ClientHandler(tcpClient, sslStream, ch_RemoveClient);
 
                 while (true)
                 {
                     numberOfBytesRead = sslStream.Read(buffer, 0, buffer.Length);
                     if (numberOfBytesRead <= 0)
                     {
-                        Log.WriteLine("Client closed the socket {0}", client.Client.RemoteEndPoint.ToString());
+                        Log.WriteLine("Client closed the socket {0}", client.EndPoint.ToString());
+                        client.Close();
                         break;
                     }
-                    Log.WriteLine("{1} ReadBuffer content: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead), client.Client.RemoteEndPoint.ToString());
+                    Log.WriteLine("{1} ReadBuffer content: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead), client.EndPoint.ToString());
 
                     List<Message> messageBuffer = ProcessBuffer(buffer.Take(numberOfBytesRead).ToArray());
-                    Log.WriteLine("{1} MessageBuffer.Count = {0}", messageBuffer.Count, client.Client.RemoteEndPoint.ToString());
+                    Log.WriteLine("{1} MessageBuffer.Count = {0}", messageBuffer.Count, client.EndPoint.ToString());
 
                     bool breakIt = false;
 
                     for (int i = 0; i < messageBuffer.Count; i++)
                     {
                         var m = messageBuffer[i];
-                        Log.WriteLine("Message from {0}: Type: " + m.Type + " Content: " + m.Content, client.Client.RemoteEndPoint.ToString());
+                        Log.WriteLine("Message from {0}: Type: " + m.Type + " Content: " + m.Content, client.EndPoint.ToString());
                         if (m.Type == MessageType.IdentityMsg && m.Content.Length == 10)
                         {
+                            client.DemandedRaspberryId = m.Content;
+                            // helyes a kérés
                             lock (listSyncObject)
                             {
                                 var rh = raspberryList.Where(r => r.Id == m.Content);
                                 if (rh.Count() == 1)
                                 {
                                     // Kérés a raspberry-hez, hogy indítson új csatornát amin aztán ezzel a klienssel fog kommunikálni.
-                                    rh.First().SendCreateTunnelFor(client.Client.RemoteEndPoint.ToString());
+                                    rh.First().SendCreateTunnelFor(client.Id.ToString());
 
-                                    ClientHandler ch = new ClientHandler(client, sslStream) { DemandedRaspberryId = m.Content };
-                                    ch.RemoveClient += ch_RemoveClient;
                                     List<Message> tempMsgs = new List<Message>();
                                     for (int j = i + 1; j < messageBuffer.Count; j++)
                                     {
                                         tempMsgs.Add(messageBuffer[j]);
                                     }
 
-                                    ch.MessageBuffer = tempMsgs;
+                                    client.MessageBuffer = tempMsgs;
 
-                                    clientList.Add(ch);
+                                    clientList.Add(client);
 
-                                    Log.WriteLine("Client {0} added to list", ch.Id);
+                                    Log.WriteLine("Client {0} added to list", client.Id);
+                                    
                                     StringBuilder sb = new StringBuilder();
                                     Log.WriteLine("Connected Clients: ");
                                     foreach (var c in clientList)
@@ -365,14 +376,11 @@ namespace iContrAll.RemoteServer
                                 }
                                 else
                                 {
+                                    // Itt gáz van
                                     breakIt = true;
                                     break;
                                 }
                             }
-
-                            // TODO: ask for creating thread, save this client
-                            // TODO: vigyük a maradék üzeneteket át, kell a bejelentkezéshez!
-                            // ClientHandler ch = new ClientHandler() { TcpChannel = client, SslStream = sslStream };
                         }
                     }
 
@@ -387,7 +395,7 @@ namespace iContrAll.RemoteServer
             }
             catch (Exception e)
             {
-                Log.WriteLine("Exception while trying to make some effort to get the raspberry {0}", client.Client.RemoteEndPoint.ToString());
+                Log.WriteLine("Exception while trying to make some effort to get the raspberry {0}", tcpClient.Client.RemoteEndPoint.ToString());
                 Log.WriteLine("Exception: {0}", e.ToString());
             }
             finally
@@ -397,16 +405,18 @@ namespace iContrAll.RemoteServer
                 //// the sslStream.
                 if (closeSslStream)
                 {
+                    if (client!=null) client.Close();
                     if (sslStream != null)
                         sslStream.Close();
-                    if (client != null)
-                        client.Close();
+                    if (tcpClient != null)
+                        tcpClient.Close();
                 }
             }
         }
 
         static void ch_RemoveClient(ClientHandler ch)
         {
+            if (ch == null) return;
             lock(listSyncObject)
             {
                 string id = ch.Id;
@@ -422,23 +432,28 @@ namespace iContrAll.RemoteServer
                 }
                 Log.WriteLine(sb.ToString());
                 sb.Clear();
+
+                ch = null;
             }
         }
 
         static void rh_RemoveRaspberry(RaspberryHandler rh)
         {
+            if (rh == null) return;
             lock (listSyncObject)
             {
-                string id = rh.Id;
+                string id = rh.Id != null ? rh.Id : rh.EndPoint.ToString();
                 bool result = raspberryList.Remove(rh);
-                if (result) Log.WriteLine("Raspberry" + id + "succesfully removed");
-                else Log.WriteLine("Raspberry" + id + "was not in the list, or cannot be removed");
+                Log.WriteLine("Raspberry " + id + (result ? " succesfully removed"
+                                                          : " was not in the list or cannot be removed"));
 
-                StringBuilder sb = new StringBuilder();
+                rh = null;
+
                 Log.WriteLine("Connected Raspberries: ");
+                StringBuilder sb = new StringBuilder();
                 foreach (var r in raspberryList)
                 {
-                    sb.AppendFormat("\tId: {0} -> EndPoint: {1};\n", r.Id, r.TcpChannel.Client.RemoteEndPoint.ToString());
+                    sb.AppendFormat("\tId: {0} -> EndPoint: {1};\n", r.Id, r.EndPoint.ToString());
                 }
                 Log.WriteLine(sb.ToString());
                 sb.Clear();

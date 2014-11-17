@@ -26,8 +26,7 @@ namespace iContrAll.RemoteServer
             foreach (var m in ch.MessageBuffer)
             {
                 byte[] buffer = BuildMessage((byte)m.Type, Encoding.UTF8.GetBytes(m.Content));
-                if (rh.CanWrite)
-                    rh.Write(buffer, buffer.Length);
+                rh.Write(buffer, buffer.Length);
             }
 
             raspberryThread = new Thread(ListenForRasberryMessages);
