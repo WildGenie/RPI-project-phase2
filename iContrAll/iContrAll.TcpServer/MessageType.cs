@@ -3,6 +3,7 @@
     public enum MessageType
     {
         CreateThreadFor = 63,
+        PingMessage = 62,
         IdentityMsg = -1,
         DebugMsg = 0,
         RadioMsg = 1,
