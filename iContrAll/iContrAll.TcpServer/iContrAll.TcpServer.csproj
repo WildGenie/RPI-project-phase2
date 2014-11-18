@@ -81,6 +81,10 @@
       <Project>{d3658e6e-99b1-435f-9261-1df6b496e893}</Project>
       <Name>iContrAll.SsdpServerLib</Name>
     </ProjectReference>
+    <ProjectReference Include="..\LogHelper\LogHelper.csproj">
+      <Project>{6c5b6eae-0cf1-4026-ae15-34cba8753b27}</Project>
+      <Name>LogHelper</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

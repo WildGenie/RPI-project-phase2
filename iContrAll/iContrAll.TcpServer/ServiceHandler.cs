@@ -1,4 +1,5 @@
 ﻿using iContrAll.SPIRadio;
+using LogHelper;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -73,12 +74,15 @@ namespace iContrAll.TcpServer
                             break;
                         }
 
-						Console.WriteLine("Message (length={1}) received from: {0} at {2}", tcpClient.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
+						Log.WriteLine("Message (length={1}) received from: {0} at {2}", tcpClient.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
 
 						byte[] readBytes = readBuffer.Take(numberOfBytesRead).ToArray();
-                        
+
+                        Log.WriteByteArray(readBytes);
+
 						foreach (var message in ProcessBuffer(readBytes))
 						{
+                            Log.WriteLine("Message -> Type: {0}, Length: {1}, Content: {2}", message.Type, message.Length, message.Content);
                             Console.WriteLine("Message.Content: {0}", message.Content);
                             if (clientState != ClientState.LoginOK && message.Type != MessageType.LoginRequest)
                             {

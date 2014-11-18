@@ -78,6 +78,16 @@ namespace LogHelper
             { Console.WriteLine("Log.Write: StreamWriter exception"); Console.WriteLine(ex); }
         }
 
+        public static void WriteByteArray(byte[] array)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < array.Length; i++)
+            {
+                sb.Append(array[i].ToString() + "|");
+            }
+            WriteLine(sb.ToString());
+        }
+
         private static string TimeStampMessage(string message)
         {
             return string.Format("[{0}] {1}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture), message);
