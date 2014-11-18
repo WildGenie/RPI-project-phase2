@@ -51,6 +51,8 @@ namespace iContrAll.TcpServer
 
             this.remoteServerThread = new Thread(new ThreadStart(RemoteServerManaging));
             this.remoteServerThread.Start();
+
+            this.remotePingTimer = new Timer(PingRemoteServer);
 		}
 
         //private void ProcessReceivedRadioMessage(RadioMessageEventArgs e)
@@ -288,7 +290,7 @@ namespace iContrAll.TcpServer
                     else
                     {
                         Console.WriteLine("ZeroBytesRead: {0} from remoteServer {1}", numberOfBytesRead, remoteServer.Client.RemoteEndPoint.ToString());
-                        remotePingTimer.Dispose();
+                        remotePingTimer.Change(Timeout.Infinite, Timeout.Infinite);
                         sslStream.Close();
                         remoteServer.Close();
                         Thread.Sleep(10000);
@@ -305,7 +307,7 @@ namespace iContrAll.TcpServer
                     Console.WriteLine(ex.Message);
                     if (ex.InnerException != null)
                     { Console.WriteLine(ex.InnerException.Message); }
-                    remotePingTimer.Dispose();
+                    remotePingTimer.Change(Timeout.Infinite, Timeout.Infinite);
                     sslStream.Close();
                     remoteServer.Close();
                     Thread.Sleep(10000);
@@ -547,7 +549,7 @@ namespace iContrAll.TcpServer
                 
             }
 
-            this.remotePingTimer = new Timer(PingRemoteServer, null, 60000, 60000);
+            this.remotePingTimer.Change(60000, 60000);
         }
 
         private void PingRemoteServer(object state)
@@ -561,7 +563,7 @@ namespace iContrAll.TcpServer
             {
                 Console.WriteLine("RemoteServerPing failed");
                 // stop the ping
-                remotePingTimer.Dispose();
+                remotePingTimer.Change(Timeout.Infinite, Timeout.Infinite);
                 // we need to reconnect
                 ConnectToRemoteServer();
             }
