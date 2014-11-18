@@ -25,8 +25,24 @@ namespace iContrAll.RemoteServer
 
         public bool Connected { get { return tcpChannel.Connected; } }
 
+        private List<RemoveClientEH> delegates = new List<RemoveClientEH>();
+
         public delegate void RemoveClientEH(ClientHandler ch);
-        public event RemoveClientEH RemoveClient;
+
+        private event RemoveClientEH removeClient;
+        public event RemoveClientEH RemoveClient
+        {
+            add
+            {
+                removeClient += value;
+                delegates.Add(value);
+            }
+            remove
+            {
+                removeClient -= value;
+                delegates.Remove(value);
+            }
+        }
 
         public ClientHandler(TcpClient tcpChannel, SslStream sslStream, RemoveClientEH removeClient)
         {
@@ -34,11 +50,6 @@ namespace iContrAll.RemoteServer
             this.sslStream = sslStream;
             this.Id = this.tcpChannel.Client.RemoteEndPoint.ToString();
             this.RemoveClient += removeClient;
-        }
-
-        public ClientHandler()
-        {
-            // TODO: ebből még baj lesz, miért nem oldom meg normálisan
         }
 
         public bool Write(byte[] message, int numberOfBytesRead)
@@ -63,7 +74,6 @@ namespace iContrAll.RemoteServer
                     Log.WriteLine("Cannot write to sslStream at {0} in {1}", Id, "ClientHandler.Write()");
                     return false;
                 }
-                
             }
             catch(Exception ex)
             {
@@ -93,10 +103,17 @@ namespace iContrAll.RemoteServer
         {
             try
             {
-                if (this.RemoveClient!=null)
+                if (this.removeClient != null)
                 {
-                    this.RemoveClient(this);
+                    this.removeClient(this);
                 }
+
+                foreach (var d in delegates)
+                {
+                    removeClient -= d;
+                }
+                delegates.Clear();
+
                 sslStream.Close();
                 tcpChannel.Close();
             }

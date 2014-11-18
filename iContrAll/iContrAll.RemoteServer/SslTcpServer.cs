@@ -110,7 +110,6 @@ namespace iContrAll.RemoteServer
 
         static void HandleRaspberry(object raspberryParam)
         {
-            string id = string.Empty;
             TcpClient raspberryClient = null;
             SslStream sslStream = null;
             RaspberryHandler raspberry = null;
@@ -129,7 +128,7 @@ namespace iContrAll.RemoteServer
                 sslStream.AuthenticateAsServer(serverCertificate, true, SslProtocols.Tls, true);
                 Log.WriteLine("COMPLETE Raspberry Authentication {0}", raspberryClient.Client.RemoteEndPoint.ToString()); //, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
                 
-                Log.WriteLine("Waiting for raspberry message...{0}", raspberryClient.Client.RemoteEndPoint.ToString());
+                
 
                 byte[] buffer = new byte[32768];
                 int numberOfBytesRead = -1;
@@ -141,6 +140,7 @@ namespace iContrAll.RemoteServer
                     bool breakIt = false;
                     try
                     {
+                        Log.WriteLine("Waiting for raspberry message...{0}", raspberry.EndPoint);
                         // Read the raspberry's message.
                         if ((numberOfBytesRead = raspberry.Read(buffer)) <= 0)
                         {
@@ -263,17 +263,6 @@ namespace iContrAll.RemoteServer
                     {
                         raspberry.Close();
                         raspberry = null;
-                        //IEnumerable<RaspberryHandler> rhs = null;
-                        //lock (listSyncObject)
-                        //{
-                        //    // TODO: szedjük ki a remove-ból a lock-ot, úgyis itt hívjuk, a close-okat, az meg a remove-ot
-                        //    rhs = raspberryList.Where(r => r.Id == raspberry.Id);
-                        //}
-                        //foreach (var r in rhs)
-                        //{
-                        //    if (r!=null)
-                        //        r.Close();
-                        //}
                     }
                     // The client stream will be closed with the sslStream 
                     // because we specified this behavior when creating 
@@ -306,9 +295,6 @@ namespace iContrAll.RemoteServer
                 Log.WriteLine("STARTED Client Authentication {0}", tcpClient.Client.RemoteEndPoint.ToString());
                 sslStream.AuthenticateAsServer(serverCertificate, true, SslProtocols.Ssl3, true);
 
-                // Set timeouts for the read and write to 5 seconds.
-                //sslStream.ReadTimeout = 5000;
-                //sslStream.WriteTimeout = 5000;
                 // Read a message from the client.   
                 Log.WriteLine("COMPLETED Client Authentication {0}", tcpClient.Client.RemoteEndPoint.ToString());
                 int numberOfBytesRead = -1;
@@ -319,13 +305,15 @@ namespace iContrAll.RemoteServer
 
                 while (true)
                 {
-                    numberOfBytesRead = sslStream.Read(buffer, 0, buffer.Length);
-                    if (numberOfBytesRead <= 0)
+                    Log.WriteLine("Waiting for client message...{0}", client.EndPoint);
+                    if ((numberOfBytesRead = client.Read(buffer)) <= 0)
                     {
-                        Log.WriteLine("Client closed the socket {0}", client.EndPoint.ToString());
+                        Log.WriteLine("Client {1}: Zerobyte read: {0}", numberOfBytesRead, client.EndPoint);
                         client.Close();
+                        client = null;
                         break;
                     }
+
                     Log.WriteLine("{1} ReadBuffer content: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead), client.EndPoint.ToString());
 
                     List<Message> messageBuffer = ProcessBuffer(buffer.Take(numberOfBytesRead).ToArray());
