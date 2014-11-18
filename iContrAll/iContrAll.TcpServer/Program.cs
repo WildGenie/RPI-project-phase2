@@ -30,8 +30,10 @@ namespace iContrAll.TcpServer
             certificateName = args[2];
             certificatePath = args[3];
             certificatePassphrase = args[4];
-            
-            new Server(1122, remoteServerAddress, remoteServerPort, certificateName, certificatePath, certificatePassphrase);
+
+            int port = int.Parse(System.Configuration.ConfigurationManager.AppSettings["ListeningPort"]);
+
+            new Server(port, remoteServerAddress, remoteServerPort, certificateName, certificatePath, certificatePassphrase);
         }
     }
 }
