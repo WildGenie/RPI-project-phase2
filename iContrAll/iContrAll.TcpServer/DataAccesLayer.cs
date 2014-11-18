@@ -13,6 +13,18 @@ namespace iContrAll.TcpServer
         public string DeviceId { get; set; }
         public int DeviceChannel { get; set; }
     }
+
+    class TimerData
+    {
+        public string DeviceId { get; set; }
+        public int DeviceChannel { get; set; }
+
+        public string StartTime { get; set; }
+        public string EndTime { get; set; }
+
+        public DateTime Date { get; set; }
+    }
+
     #endregion
     class DataAccesLayer: IDisposable
     {
@@ -668,6 +680,65 @@ namespace iContrAll.TcpServer
             }
 
             return statusList;
+        }
+
+        public void AddTimer(TimerData timer)
+        {
+            using (var cmd = mysqlConn.CreateCommand())
+            {
+                cmd.CommandText = "INSERT INTO Timers (DeviceId, Channel, StartTime, EndTime, AddDate) " +
+                                  "VALUES (@DeviceId, @Channel, @StartTime, @EndTime, @AddDate)";
+
+                cmd.Parameters.AddWithValue("@DeviceId", timer.DeviceId);
+                cmd.Parameters.AddWithValue("@Channel", timer.DeviceChannel);
+                cmd.Parameters.AddWithValue("@StartTime", timer.StartTime);
+                cmd.Parameters.AddWithValue("@EndTime", timer.EndTime);
+                cmd.Parameters.AddWithValue("@AddDate", DateTime.Now.ToString("yyyy-MM-dd"));
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public void RemoveTimer(TimerData timer)
+        {
+            using (var cmd = mysqlConn.CreateCommand())
+            {
+                cmd.CommandText = "DELETE FROM Timers WHERE DeviceId=@DeviceId AND Channel=@Channel AND StartTime=@StartTime AND EndTime=@EndTime";
+
+                cmd.Parameters.AddWithValue("@DeviceId", timer.DeviceId);
+                cmd.Parameters.AddWithValue("@Channel", timer.DeviceChannel);
+                cmd.Parameters.AddWithValue("@StartTime", timer.StartTime);
+                cmd.Parameters.AddWithValue("@EndTime", timer.EndTime);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public IEnumerable<TimerData> GetTimers()
+        {
+            List<TimerData> timerList = new List<TimerData>();
+
+            using(MySqlCommand cmd = mysqlConn.CreateCommand())
+            {
+                cmd.CommandText = "SELECT * FROM Timers";
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        timerList.Add(new TimerData
+                        {
+                            DeviceId = reader["deviceId"].ToString(),
+                            DeviceChannel = int.Parse(reader["channel"].ToString()),
+                            StartTime = reader["startTime"].ToString(),
+                            EndTime = reader["endTime"].ToString(),
+                            Date = DateTime.Parse(reader["addDate"].ToString())
+                        });
+                    }
+                }
+            }
+
+            return timerList;
         }
 
         #endregion

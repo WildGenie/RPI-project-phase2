@@ -32,6 +32,8 @@ namespace iContrAll.TcpServer
 
         Timer remotePingTimer;
 
+        Timer actionTimer;
+
 		public Server(int port, string remoteServerAddress, int remoteServerPort,
             string serverCertificateName, string certificatePath, string certificatePassphrase)
 		{
@@ -53,7 +55,74 @@ namespace iContrAll.TcpServer
             this.remoteServerThread.Start();
 
             this.remotePingTimer = new Timer(PingRemoteServer);
+
+            this.actionTimer = new Timer(RunTimedActions, null, 
+                                         (60 - DateTime.Now.Second) * 1000 - DateTime.Now.Millisecond, 
+                                         60000);
 		}
+
+        private void RunTimedActions(object state)
+        {
+            using(var dal = new DataAccesLayer())
+            {
+                string id = System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2);
+
+                DateTime now = DateTime.Now;
+
+                foreach (var timer in dal.GetTimers())
+                {
+                    int n;
+                    bool isStartTimeNumeric = int.TryParse(timer.StartTime, out n);
+                    bool isEndTimeNumeric = int.TryParse(timer.EndTime, out n);
+                    
+                    if (isStartTimeNumeric && timer.StartTime.Length == 4)
+                    {
+                        int hour = 0;
+                        int minute = 0;
+                        if (int.TryParse(timer.StartTime.Substring(0, 2), out hour) && int.TryParse(timer.StartTime.Substring(2, 2), out minute))
+                        {
+                            if (hour == now.Hour && minute == now.Minute)
+                            {
+                                bool uOr1 = true;
+                                if (timer.DeviceId.StartsWith("OC1"))
+                                {
+                                    uOr1 = false;
+                                }
+
+                                string message = string.Format("{0}{1}67ch{4}{2}={3}", id, timer.DeviceId, timer.DeviceChannel, uOr1?"1":"u", uOr1?"":"s");
+
+                                RadioHelper.SendCommandOnRadio(message);
+                            }
+                        }
+                    }
+
+                    if (isEndTimeNumeric && timer.EndTime.Length == 4)
+                    {
+                        int hour = 0;
+                        int minute = 0;
+                        if (int.TryParse(timer.EndTime.Substring(0, 2), out hour) && int.TryParse(timer.EndTime.Substring(2, 2), out minute))
+                        {
+                            if (hour == now.Hour && minute == now.Minute)
+                            {
+                                bool dOr0 = true;
+                                if (timer.DeviceId.StartsWith("OC1"))
+                                {
+                                    dOr0 = false;
+                                }
+
+                                string message = string.Format("{0}{1}67ch{4}{2}={3}", id, timer.DeviceId, timer.DeviceChannel, dOr0 ? "0" : "d", dOr0 ? "" : "s");
+
+                                RadioHelper.SendCommandOnRadio(message);
+
+                                dal.RemoveTimer(timer);
+                            }
+                        }
+                    }
+
+                    Thread.Sleep(250);
+                }
+            }
+        }
 
         //private void ProcessReceivedRadioMessage(RadioMessageEventArgs e)
         private void ProcessReceivedRadioMessage(byte[] receivedBytes)
