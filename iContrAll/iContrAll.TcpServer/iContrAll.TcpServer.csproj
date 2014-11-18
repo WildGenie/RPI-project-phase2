@@ -53,6 +53,7 @@
     <Compile Include="IConnectedDevice.cs" />
     <Compile Include="LocalConnectedDevice.cs" />
     <Compile Include="Place.cs" />
+    <Compile Include="RadioHelper.cs" />
     <Compile Include="RemoteConnectedDevice.cs" />
     <Compile Include="ServiceHandler.cs" />
     <Compile Include="DataAccesLayer.cs" />
