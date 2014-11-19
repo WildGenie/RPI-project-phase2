@@ -88,6 +88,7 @@ namespace iContrAll.TcpServer
                         //{
                         if (eqPos == 4)
                         {
+                            // dimmm érték állítása
                             if (command[2] == 'd')
                             {
                                 int.TryParse(command[3].ToString(), out channelId);
@@ -115,21 +116,20 @@ namespace iContrAll.TcpServer
                                         if (i == channelId)
                                         {
                                             dimValues[i - 1] = (byte)dimValue;
+                                            // megtárgyalni a dimValue == 0 esetét. Kikapcsolás, dimÉrték hova legyen állítva?
+                                            channelControl += 1;
+                                        }
+                                        else
+                                        {
+                                            channelControl += 'x';
                                         }
                                     }
                                 }
 
                                 //string dimString = Encoding.UTF8.GetString(dimValues);
-                                string basicString = senderIdInMsg + targetIdInMsg + "01" + "x";
-
-                                for (int i = 0; i < 4; i++)
-                                {
-                                    // TODO: Megbeszélni
-                                    if (dimValues[i] > 0)
-                                        basicString += 1;
-                                    else basicString += "x";
-                                }
-
+                                string basicString = senderIdInMsg + targetIdInMsg + "01" + "x" + channelControl;
+                                
+                                // Egyszer majd...
                                 basicString += "xxxx";
 
                                 byte[] basicBytes = Encoding.UTF8.GetBytes(basicString);
