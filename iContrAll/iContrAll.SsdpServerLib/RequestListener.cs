@@ -158,7 +158,7 @@ namespace iContrAll.SsdpServerLib
         public byte[] CreateAliveResponse(string location, string searchType, string usn, ushort maxAge)
         {
             return Encoding.ASCII.GetBytes(String.Format(
-                alive_response, maxAge, new RealTimeClock.RealTimeClock().GetDateTime().ToString("r"), location, os, user_agent, searchType, usn));
+                alive_response, maxAge, DateTime.Now.ToString("r"), location, os, user_agent, searchType, usn));
         }
 
         //void OnAsyncResultReceived(IAsyncResult asyncResult)

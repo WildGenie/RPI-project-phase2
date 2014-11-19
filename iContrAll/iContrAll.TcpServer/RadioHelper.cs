@@ -213,7 +213,7 @@ namespace iContrAll.TcpServer
                                         int hour = int.Parse(value.Substring(1, 2));
                                         int minute = int.Parse(value.Substring(3, 2));
                                         
-                                        DateTime time = new RealTimeClock.RealTimeClock().GetDateTime().AddHours(hour).AddMinutes(minute);
+                                        DateTime time = DateTime.Now.AddHours(hour).AddMinutes(minute);
                                         string endTime = time.ToString("HHmm");
 
                                         Console.WriteLine("EndTime: {0}", endTime);
@@ -403,7 +403,7 @@ namespace iContrAll.TcpServer
                                     int hour = int.Parse(value.Substring(1, 2));
                                     int minute = int.Parse(value.Substring(3, 2));
 
-                                    DateTime time = new RealTimeClock.RealTimeClock().GetDateTime().AddHours(hour).AddMinutes(minute);
+                                    DateTime time = DateTime.Now.AddHours(hour).AddMinutes(minute);
                                     string endTime = time.ToString("HHmm");
 
                                     Console.WriteLine("EndTime: {0}", endTime);

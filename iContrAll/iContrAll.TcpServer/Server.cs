@@ -55,7 +55,7 @@ namespace iContrAll.TcpServer
             this.remoteServerThread.Start();
 
             this.remotePingTimer = new Timer(PingRemoteServer);
-            DateTime now = new RealTimeClock.RealTimeClock().GetDateTime();
+            DateTime now = DateTime.Now;
             this.actionTimer = new Timer(RunTimedActions, null, 
                                          (60 - now.Second) * 1000 - now.Millisecond, 
                                          60000);
@@ -67,7 +67,7 @@ namespace iContrAll.TcpServer
             {
                 string id = System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2);
 
-                DateTime now = new RealTimeClock.RealTimeClock().GetDateTime();
+                DateTime now = DateTime.Now;
 
                 foreach (var timer in dal.GetTimers())
                 {
@@ -347,7 +347,7 @@ namespace iContrAll.TcpServer
                 {
                     if ((numberOfBytesRead = sslStream.Read(readBuffer, 0, bufferSize)) > 0)
                     {
-                        Console.WriteLine("Message (length={1}) received from: {0} at {2}", remoteServer.Client.RemoteEndPoint.ToString(), numberOfBytesRead, new RealTimeClock.RealTimeClock().GetDateTime().ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
+                        Console.WriteLine("Message (length={1}) received from: {0} at {2}", remoteServer.Client.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
 
                         byte[] readBytes = readBuffer.Take(numberOfBytesRead).ToArray();
 
