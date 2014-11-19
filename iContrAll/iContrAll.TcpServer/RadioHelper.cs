@@ -46,7 +46,8 @@ namespace iContrAll.TcpServer
                     int channelId;
                     int eqPos = command.IndexOf('=');
                     Console.WriteLine(command);
-
+                    
+                    // pl. ch1=1
                     if (eqPos == 3)
                     {
                         int.TryParse(command[2].ToString(), out channelId);
@@ -61,18 +62,14 @@ namespace iContrAll.TcpServer
                             else channelControl += 'x';
                         }
 
-                        byte[] dimValues = new byte[4] { 0, 0, 0, 0 };
+                        byte[] dimValues = new byte[4] { 100, 100, 100, 100 };
 
                         using (var dal = new DataAccesLayer())
                         {
-                            var statuses = dal.GetDeviceStatus(targetIdInMsg).Where(s => s.DeviceChannel == channelId);
-                            // max 1 lehet
-                            if (statuses.Count() > 0)
+                            foreach (var s in dal.GetDeviceStatus(targetIdInMsg))
                             {
-                                Console.WriteLine("Kiolvasott dimvalue: " + (byte)statuses.First().Value);
-                                dimValues[channelId - 1] = (byte)statuses.First().Value;
+                                dimValues[s.DeviceChannel] = (byte)s.Value;
                             }
-                            else dimValues[channelId - 1] = 100;
                         }
 
                         // byte[] retBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + channelControl + "xxxx" + "xxxx");
@@ -105,15 +102,21 @@ namespace iContrAll.TcpServer
 
                                 // Console.WriteLine("DIM üzenet: " + dim + "("+dim.Substring(0,iOfPoint)+")"+ "=> " + dimValue + " on channel " + channelId);
 
-                                byte[] dimValues = new byte[4];
-                                for (int i = 1; i <= 4; i++)
+                                byte[] dimValues = new byte[] { 100, 100, 100, 100 };
+                                using (var dal = new DataAccesLayer())
                                 {
-                                    if (i == channelId)
+                                    foreach(var s in dal.GetDeviceStatus(targetIdInMsg))
                                     {
-                                        dimValues[i - 1] = (byte)dimValue;
+                                        dimValues[s.DeviceChannel] = (byte)s.Value;
                                     }
-                                        // TODO: 255-öt küldeni!!!
-                                    else dimValues[i - 1] = 0;
+                                    
+                                    for (int i = 1; i <= 4; i++)
+                                    {
+                                        if (i == channelId)
+                                        {
+                                            dimValues[i - 1] = (byte)dimValue;
+                                        }
+                                    }
                                 }
 
                                 //string dimString = Encoding.UTF8.GetString(dimValues);
@@ -121,12 +124,12 @@ namespace iContrAll.TcpServer
 
                                 for (int i = 0; i < 4; i++)
                                 {
+                                    // TODO: Megbeszélni
                                     if (dimValues[i] > 0)
                                         basicString += 1;
                                     else basicString += "x";
                                 }
 
-                                // 
                                 basicString += "xxxx";
 
                                 byte[] basicBytes = Encoding.UTF8.GetBytes(basicString);
@@ -236,18 +239,14 @@ namespace iContrAll.TcpServer
                                         else channelControl += 'x';
                                     }
 
-                                    byte[] dimValues = new byte[4] { 0, 0, 0, 0 };
+                                    byte[] dimValues = new byte[4] { 100, 100, 100, 100 };
 
                                     using (var dal = new DataAccesLayer())
                                     {
-                                        var statuses = dal.GetDeviceStatus(targetIdInMsg).Where(s => s.DeviceChannel == channelId);
-                                        // max 1 lehet
-                                        if (statuses.Count() > 0)
+                                        foreach (var s in dal.GetDeviceStatus(targetIdInMsg))
                                         {
-                                            Console.WriteLine("Kiolvasott dimvalue: " + (byte)statuses.First().Value);
-                                            dimValues[channelId - 1] = (byte)statuses.First().Value;
+                                            dimValues[s.DeviceChannel] = (byte)s.Value;
                                         }
-                                        else dimValues[channelId - 1] = 100;
                                     }
 
                                     // byte[] retBytes = Encoding.UTF8.GetBytes(senderIdInMsg + targetIdInMsg + "01" + "x" + channelControl + "xxxx" + "xxxx");
