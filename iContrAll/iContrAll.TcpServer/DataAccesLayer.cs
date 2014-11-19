@@ -693,7 +693,7 @@ namespace iContrAll.TcpServer
                 cmd.Parameters.AddWithValue("@Channel", timer.DeviceChannel);
                 cmd.Parameters.AddWithValue("@StartTime", timer.StartTime);
                 cmd.Parameters.AddWithValue("@EndTime", timer.EndTime);
-                cmd.Parameters.AddWithValue("@AddDate", DateTime.Now.ToString("yyyy-MM-dd"));
+                cmd.Parameters.AddWithValue("@AddDate", new RealTimeClock.RealTimeClock().GetDateTime().ToString("yyyy-MM-dd"));
 
                 cmd.ExecuteNonQuery();
             }

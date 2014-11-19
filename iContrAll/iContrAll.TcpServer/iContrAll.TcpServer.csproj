@@ -74,6 +74,10 @@
     <Service Include="{3259AA49-8AA1-44D3-9025-A0B520596A8C}" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\iContrAll.RealTimeClock\iContrAll.RealTimeClock.csproj">
+      <Project>{26a823cd-edac-43f6-94a9-475ee3321cd5}</Project>
+      <Name>iContrAll.RealTimeClock</Name>
+    </ProjectReference>
     <ProjectReference Include="..\iContrAll.SPIRadioWithWiringPi\iContrAll.SPIRadioWithWiringPi.csproj">
       <Project>{607b15ce-1746-4c52-84ac-f21d1cf832aa}</Project>
       <Name>iContrAll.SPIRadioWithWiringPi</Name>

@@ -45,6 +45,12 @@
     <Compile Include="SsdpServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\iContrAll.RealTimeClock\iContrAll.RealTimeClock.csproj">
+      <Project>{26a823cd-edac-43f6-94a9-475ee3321cd5}</Project>
+      <Name>iContrAll.RealTimeClock</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

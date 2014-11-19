@@ -213,7 +213,7 @@ namespace iContrAll.TcpServer
                                         int hour = int.Parse(value.Substring(1, 2));
                                         int minute = int.Parse(value.Substring(3, 2));
                                         
-                                        DateTime time = DateTime.Now.AddHours(hour).AddMinutes(minute);
+                                        DateTime time = new RealTimeClock.RealTimeClock().GetDateTime().AddHours(hour).AddMinutes(minute);
                                         string endTime = time.ToString("HHmm");
 
                                         Console.WriteLine("EndTime: {0}", endTime);
@@ -307,7 +307,6 @@ namespace iContrAll.TcpServer
                         int eqPos = command.IndexOf('=');
                         string value = command.Substring(eqPos + 1);
                         byte b = 255; // sokszor használjuk 'don't care' jelzésre
-                        string channelControl = string.Empty;
 
                         // A küldendő üzenet ezen része már itt ismert, csak a tartalom fog változni.
                         // |senderId| = 8byte + |targetId| = 8byte + |TAG| = 2byte
@@ -404,7 +403,7 @@ namespace iContrAll.TcpServer
                                     int hour = int.Parse(value.Substring(1, 2));
                                     int minute = int.Parse(value.Substring(3, 2));
 
-                                    DateTime time = DateTime.Now.AddHours(hour).AddMinutes(minute);
+                                    DateTime time = new RealTimeClock.RealTimeClock().GetDateTime().AddHours(hour).AddMinutes(minute);
                                     string endTime = time.ToString("HHmm");
 
                                     Console.WriteLine("EndTime: {0}", endTime);
