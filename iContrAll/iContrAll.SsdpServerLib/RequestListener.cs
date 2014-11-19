@@ -132,11 +132,12 @@ namespace iContrAll.SsdpServerLib
                     //Console.WriteLine("Received from: {0}: {1}", buffer.SenderIPEndPoint.ToString(), Encoding.ASCII.GetString(dgram));
                     if (dgram != null && dgram.Length > 0 && IsDgramMSearch(dgram))
                     {
-                        Console.WriteLine("M-SEARCH Received from: {0}", buffer.SenderIPEndPoint.ToString());
                         // Console.WriteLine("Datagram:\n{0}", Encoding.UTF8.GetString(dgram));
                         //Console.WriteLine(Encoding.UTF8.GetString(dgram));
                         if (IsDgramRaspberryId(dgram))
                         {
+                            // csak azt írjuk ki, ha jó MSearch jött felénk.
+                            Console.WriteLine("M-SEARCH Received from: {0}", buffer.SenderIPEndPoint.ToString());
                             //Console.WriteLine("VÁLASZOLUNK!");
                             Socket responseSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                             byte[] sendbuf = CreateAliveResponse(getLocalIPAddress(), identifier, identifier, 900);
