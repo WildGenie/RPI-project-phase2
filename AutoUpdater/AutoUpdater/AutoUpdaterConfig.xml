@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoUpdaterConfiguration>
+	<Address>https://www.dropbox.com/s/exvmvp38si8kwu2/latestversion.txt?dl=0</Address>
+	<Address type="SFTP" user="updater" password="bukkake">alpha.icontrall.hu</Address>
+	<RemoteFileName>latestversion.txt</RemoteFileName>
+</AutoUpdaterConfiguration>
