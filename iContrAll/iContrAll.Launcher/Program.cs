@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -27,13 +28,23 @@ namespace iContrAll.Launcher
         {
             InitGPIOPins();
 
+            string versionNumber = string.Empty;
+            using (var file = File.OpenText("/home/pi/iContrAll/bin/latestversion.txt"))
+            {
+                versionNumber = file.ReadLine();
+            }
+
+            string exeFile = "iContrAll.TcpServer.exe";
+
+            string filePath = Path.Combine("/home/pi/iContrAll/bin", versionNumber, exeFile);
+
             Process process = new Process();
             process.StartInfo.FileName = "mono";
             if (debug)
                 process.StartInfo.Arguments = "/home/pi/iContrAll/bin/Debug/iContrAll.TcpServer.exe alpha.icontrall.hu 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
                 //process.StartInfo.Arguments = "/home/pi/iContrAll/bin/Debug/iContrAll.TcpServer.exe 89.133.26.35 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
             else
-                process.StartInfo.Arguments = "/home/pi/iContrAll/bin/iContrAll.TcpServer.exe alpha.icontrall.hu 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
+                process.StartInfo.Arguments = filePath + " alpha.icontrall.hu 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
                 //process.StartInfo.Arguments = "/home/pi/iContrAll/bin/iContrAll.TcpServer.exe 89.133.26.35 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
             process.EnableRaisingEvents = true;
             process.Exited += LaunchIfCrashed;
@@ -75,7 +86,7 @@ namespace iContrAll.Launcher
             process.Start();
             Thread.Sleep(100);
             
-	     process.StartInfo.Arguments = "gpio mode 2 in";
+	        process.StartInfo.Arguments = "gpio mode 2 in";
             process.Start();
 
             process.StartInfo.Arguments = "gpio mode 2 up";
