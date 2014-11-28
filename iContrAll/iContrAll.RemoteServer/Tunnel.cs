@@ -21,14 +21,14 @@ namespace iContrAll.RemoteServer
             this.Raspberry = rh;
             this.Client = ch;
 
-            Log.WriteLine("Tunnel CREATED: Raspberry {0} - Client {1}", rh.Id, ch.Id);
-
             foreach (var m in ch.MessageBuffer)
             {
                 byte[] buffer = BuildMessage((byte)m.Type, Encoding.UTF8.GetBytes(m.Content));
                 rh.Write(buffer, buffer.Length);
             }
-
+            
+            Log.WriteLine("Tunnel CREATED: Raspberry {0} - Client {1}", rh.Id, ch.Id);
+            
             raspberryThread = new Thread(ListenForRasberryMessages);
             clientThread = new Thread(ListenForClientMessages);
 

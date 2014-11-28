@@ -128,8 +128,6 @@ namespace iContrAll.RemoteServer
                 sslStream.AuthenticateAsServer(serverCertificate, true, SslProtocols.Tls, true);
                 Log.WriteLine("COMPLETE Raspberry Authentication {0}", raspberryClient.Client.RemoteEndPoint.ToString()); //, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
                 
-                
-
                 byte[] buffer = new byte[32768];
                 int numberOfBytesRead = -1;
 
