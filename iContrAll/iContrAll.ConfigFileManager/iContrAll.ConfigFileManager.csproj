@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D3658E6E-99B1-435F-9261-1DF6B496E893}</ProjectGuid>
+    <ProjectGuid>{8054827B-E0E6-4728-B159-B94D2668F364}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>iContrAll.SsdpServerLib</RootNamespace>
-    <AssemblyName>iContrAll.SsdpServerLib</AssemblyName>
+    <RootNamespace>iContrAll.ConfigFileManager</RootNamespace>
+    <AssemblyName>iContrAll.ConfigFileManager</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -16,7 +16,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\bin\Debug\</OutputPath>
+    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -24,14 +24,13 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\bin\</OutputPath>
+    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -40,20 +39,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AsyncReceiveBuffer.cs" />
-    <Compile Include="RequestListener.cs" />
-    <Compile Include="SsdpServer.cs" />
+    <Compile Include="ConfigurationManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\iContrAll.ConfigFileManager\iContrAll.ConfigFileManager.csproj">
-      <Project>{8054827b-e0e6-4728-b159-b94d2668f364}</Project>
-      <Name>iContrAll.ConfigFileManager</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\iContrAll.RealTimeClock\iContrAll.RealTimeClock.csproj">
-      <Project>{26a823cd-edac-43f6-94a9-475ee3321cd5}</Project>
-      <Name>iContrAll.RealTimeClock</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

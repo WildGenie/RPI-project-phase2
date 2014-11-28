@@ -65,7 +65,7 @@ namespace iContrAll.TcpServer
         {
             using(var dal = new DataAccesLayer())
             {
-                string id = System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2);
+                string id = ConfigFileManager.ConfigurationManager.LoginId.Substring(2);
 
                 DateTime now = DateTime.Now;
 
@@ -146,7 +146,7 @@ namespace iContrAll.TcpServer
             string targetId = Encoding.UTF8.GetString(receivedBytes.Skip(8).Take(8).ToArray());
             Console.WriteLine(senderId + "=>" + targetId);
             // ha nem mihozzánk érkezik az üzenet, eldobjuk
-            if (targetId != System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2)) return;
+            if (targetId != ConfigFileManager.ConfigurationManager.LoginId.Substring(2)) return;
 
             //// debughoz
             //foreach (var b in receivedBytes)
@@ -576,7 +576,7 @@ namespace iContrAll.TcpServer
                     }
 
                     // Sending the device id to the server inside the login message
-                    byte[] message = Encoding.UTF8.GetBytes(System.Configuration.ConfigurationManager.AppSettings["loginid"]);
+                    byte[] message = Encoding.UTF8.GetBytes(ConfigFileManager.ConfigurationManager.LoginId);
                     byte[] data = BuildMessage(-1, message);
                     //NetworkStream stream = remoteServer.GetStream();
                     sslStream.Write(data, 0, data.Length);

@@ -191,7 +191,7 @@ namespace iContrAll.SsdpServerLib
         // TODO: ellenőrizni, hogy ASCII-e
         static readonly byte[] fingerprint_msearch = Encoding.ASCII.GetBytes("M-SEARCH * HTTP/1.1\r\n");
 
-        static readonly string raspberry_id = "DEVICE:" + System.Configuration.ConfigurationManager.AppSettings["loginid"];
+        static readonly string raspberry_id = "DEVICE:" + ConfigFileManager.ConfigurationManager.LoginId;
         static readonly byte[] fingerprint_raspberryId = Encoding.ASCII.GetBytes(raspberry_id);
 
         // TODO: ez szar

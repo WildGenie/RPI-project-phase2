@@ -319,7 +319,7 @@ namespace iContrAll.TcpServer
                     if (message.StartsWith("LC1"))
                     {
                         int i = 0;
-                        string responseMsg = message + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "60";
+                        string responseMsg = message + ConfigFileManager.ConfigurationManager.LoginId.Substring(2) + "60";
                         
                         foreach (var s in statuses)
                         {
@@ -357,7 +357,7 @@ namespace iContrAll.TcpServer
                         int i = 0;
 
                         // TAG?
-                        string responseMsg = message + System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + "50";
+                        string responseMsg = message + ConfigFileManager.ConfigurationManager.LoginId.Substring(2) + "50";
 
                         foreach (var s in statuses)
                         {
@@ -431,8 +431,8 @@ namespace iContrAll.TcpServer
 				XmlNodeList elemListPassword = doc.GetElementsByTagName("password");
 				if (elemListLogin.Count > 0 && elemListPassword.Count > 0)
 				{
-					string appLogin = System.Configuration.ConfigurationManager.AppSettings["loginid"];
-					string appPwd = System.Configuration.ConfigurationManager.AppSettings["password"];
+                    string appLogin = ConfigFileManager.ConfigurationManager.LoginId;
+                    string appPwd = ConfigFileManager.ConfigurationManager.Password;
 					login = elemListLogin[0].InnerXml;
 					password = elemListPassword[0].InnerXml;
 
@@ -620,7 +620,7 @@ namespace iContrAll.TcpServer
 			}
 
             if (elemId.StartsWith("LC1"))
-                RadioHelper.SendCommandOnRadio(System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2) + elemId + "67");
+                RadioHelper.SendCommandOnRadio(ConfigFileManager.ConfigurationManager.LoginId.Substring(2) + elemId + "67");
 
 		}
 
@@ -935,8 +935,8 @@ namespace iContrAll.TcpServer
             using (var dal = new DataAccesLayer())
             {
                 var actions = dal.GetActionsOfActionList(new Guid(elemId));
-                
-                string senderId = System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2);
+
+                string senderId = ConfigFileManager.ConfigurationManager.LoginId.Substring(2);
                 
                 foreach (var a in actions)
                 {

@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iContrAll.Launcher", "iCont
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogHelper", "LogHelper\LogHelper.csproj", "{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iContrAll.ConfigFileManager", "iContrAll.ConfigFileManager\iContrAll.ConfigFileManager.csproj", "{8054827B-E0E6-4728-B159-B94D2668F364}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,6 +87,16 @@ Global
 		{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{6C5B6EAE-0CF1-4026-AE15-34CBA8753B27}.Release|Win32.ActiveCfg = Release|Any CPU
+		{8054827B-E0E6-4728-B159-B94D2668F364}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8054827B-E0E6-4728-B159-B94D2668F364}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8054827B-E0E6-4728-B159-B94D2668F364}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{8054827B-E0E6-4728-B159-B94D2668F364}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{8054827B-E0E6-4728-B159-B94D2668F364}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{8054827B-E0E6-4728-B159-B94D2668F364}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8054827B-E0E6-4728-B159-B94D2668F364}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8054827B-E0E6-4728-B159-B94D2668F364}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{8054827B-E0E6-4728-B159-B94D2668F364}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{8054827B-E0E6-4728-B159-B94D2668F364}.Release|Win32.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

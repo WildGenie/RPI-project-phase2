@@ -15,7 +15,7 @@ namespace iContrAll.TcpServer
             try
             {
                 // raspberry azonosító
-                string raspberryId = System.Configuration.ConfigurationManager.AppSettings["loginid"];
+                string raspberryId = ConfigFileManager.ConfigurationManager.LoginId;
                 string senderIdInMsg = message.Substring(0, 8);
                 // ha nem a mi eszközünk, eldobjuk
                 if (raspberryId.Substring(2) != senderIdInMsg)
