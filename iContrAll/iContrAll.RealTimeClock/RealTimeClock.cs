@@ -7,17 +7,24 @@ using System.Threading.Tasks;
 
 namespace iContrAll.RealTimeClock
 {
-    // TODO: Singleton
-    public class RealTimeClock
+    // TODO: Singleton, static
+    public static class RealTimeClock
     {
-        int fd;
-        bool initOK = false;
+        public static DateTime Now
+        {
+            get
+            {
+                return GetDateTime();
+            }
+        }
 
-        public DateTime GetDateTime()
+        static int fd;
+        static bool initOK = false;
+
+        public static DateTime GetDateTime()
         {
             try
             {
-
                 DateTime now = new NetworkTime().GetDateTime(false);
                 new Thread(() => Synchronize()).Start();
                 return now;
@@ -29,7 +36,7 @@ namespace iContrAll.RealTimeClock
             }
         }
 
-        public bool Synchronize()
+        public static bool Synchronize()
         {
             if (!initOK) fd = InitI2C();
             
@@ -73,7 +80,7 @@ namespace iContrAll.RealTimeClock
             }
         }
 
-        private int InitI2C()
+        private static int InitI2C()
         {
             try
             {
@@ -109,7 +116,7 @@ namespace iContrAll.RealTimeClock
         /// </summary>
         /// <param name="nbr">A paraméterként várt kétjegyű szám.</param>
         /// <returns>E.g. 24 => |0010|0100|</returns>
-        int Nbr2BcdInt(int nbr)
+        static int Nbr2BcdInt(int nbr)
         {
             if (nbr < 0 || nbr > 99) throw new ArgumentException();
 
@@ -149,7 +156,7 @@ namespace iContrAll.RealTimeClock
         /// Converts a 2 byte BCD format number to an integer 
         /// </summary>
         /// <param name="bcd"></param>
-        int Bcd2Int(int bcd)
+        static int Bcd2Int(int bcd)
         {
             string bin = Convert.ToString(bcd, 2);
             int l = bin.Length;
@@ -167,7 +174,7 @@ namespace iContrAll.RealTimeClock
             return nbr;
         }
 
-        public DateTime Read()
+        static DateTime Read()
         {
             //if (!initOK) fd = InitI2C();
             if (!Synchronize()) Console.WriteLine("Syncronization failed");
