@@ -134,10 +134,11 @@ namespace iContrAll.SsdpServerLib
                     {
                         // Console.WriteLine("Datagram:\n{0}", Encoding.UTF8.GetString(dgram));
                         //Console.WriteLine(Encoding.UTF8.GetString(dgram));
+                        //LogHelper.Log.WriteLine("m - search received");
                         if (IsDgramRaspberryId(dgram))
                         {
                             // csak azt írjuk ki, ha jó MSearch jött felénk.
-                            Console.WriteLine("M-SEARCH Received from: {0}", buffer.SenderIPEndPoint.ToString());
+                            LogHelper.Log.WriteLine("M-SEARCH Received from: {0}", buffer.SenderIPEndPoint.ToString());
                             //Console.WriteLine("VÁLASZOLUNK!");
                             Socket responseSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                             byte[] sendbuf = CreateAliveResponse(getLocalIPAddress(), identifier, identifier, 900);
@@ -191,8 +192,8 @@ namespace iContrAll.SsdpServerLib
         // TODO: ellenőrizni, hogy ASCII-e
         static readonly byte[] fingerprint_msearch = Encoding.ASCII.GetBytes("M-SEARCH * HTTP/1.1\r\n");
 
-        static readonly string raspberry_id = "DEVICE:" + ConfigFileManager.ConfigurationManager.LoginId;
-        static readonly byte[] fingerprint_raspberryId = Encoding.ASCII.GetBytes(raspberry_id);
+        //static readonly string raspberry_id = "DEVICE:" + ConfigFileManager.ConfigurationManager.LoginId;
+        //static readonly byte[] fingerprint_raspberryId = Encoding.ASCII.GetBytes(raspberry_id);
 
         // TODO: ez szar
         private bool IsDgramMSearch(byte[] check)
@@ -237,6 +238,10 @@ namespace iContrAll.SsdpServerLib
             //        return false;
             //    }
             //}
+
+            string raspberry_id = "DEVICE:" + ConfigFileManager.ConfigurationManager.LoginId;
+            //LogHelper.Log.WriteLine("SSDP raspberry_id: {0}", raspberry_id);
+            byte[] fingerprint_raspberryId = Encoding.ASCII.GetBytes(raspberry_id);
 
             int found = 0;
             for (int i = 0; i < check.Length; i++)
