@@ -14,10 +14,10 @@ namespace iContrAll.TcpServer
         static void Main(string[] args)
         {
             new SsdpServer(new string[] { "urn:schemas-upnp-org:device:RlanDevice:1" });
-            string remoteServerAddress = "79.172.214.136";
+            string remoteServerAddress = "alpha.icontrall.hu";
             int remoteServerPort = 1125;
             string certificateName = "alpha.icontrall.hu";
-            string certificatePath = "/home/pi/server.crt";
+            string certificatePath = "/home/pi/ca/server.crt";
             string certificatePassphrase = "allcontri";
 
             if (args==null || args.Length < 5)
