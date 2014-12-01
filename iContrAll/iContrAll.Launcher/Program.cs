@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LogHelper;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -37,19 +38,28 @@ namespace iContrAll.Launcher
             string exeFile = "iContrAll.TcpServer.exe";
 
             string filePath = Path.Combine("/home/pi/iContrAll/bin", versionNumber, exeFile);
-
+            
             Process process = new Process();
-            process.StartInfo.FileName = "mono";
+            process.StartInfo.FileName = "sudo";
+            
             if (debug)
-                process.StartInfo.Arguments = "/home/pi/iContrAll/bin/Debug/iContrAll.TcpServer.exe alpha.icontrall.hu 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
+                process.StartInfo.Arguments = "mono /home/pi/iContrAll/bin/Debug/iContrAll.TcpServer.exe alpha.icontrall.hu 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
                 //process.StartInfo.Arguments = "/home/pi/iContrAll/bin/Debug/iContrAll.TcpServer.exe 89.133.26.35 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
             else
-                process.StartInfo.Arguments = filePath + " alpha.icontrall.hu 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
+                process.StartInfo.Arguments = "mono " + filePath + " alpha.icontrall.hu 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
                 //process.StartInfo.Arguments = "/home/pi/iContrAll/bin/iContrAll.TcpServer.exe 89.133.26.35 1125 alpha.icontrall.hu /home/pi/iContrAll/ca/server.p12 allcontri";
             process.EnableRaisingEvents = true;
             process.Exited += LaunchIfCrashed;
+            try
+            {
+                Log.WriteLine("Starting exe: {0}", filePath);
+                process.Start();
+            }
+            catch(Exception e)
+            {
+                Log.WriteLine(e);
+            }
 
-            process.Start();
         }
 
         private static void LaunchIfCrashed(object o, EventArgs e)
