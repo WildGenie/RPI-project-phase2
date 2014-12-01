@@ -352,7 +352,7 @@ namespace iContrAll.TcpServer
                     }
                     else 
                     // redőny
-                    if (message.StartsWith("OC1"))
+                    if (message.StartsWith("SH1"))
                     {
                         int i = 0;
 
@@ -413,7 +413,7 @@ namespace iContrAll.TcpServer
 
 		private byte[] CreateLoginResponse(string message)
 		{
-            Console.WriteLine("CreateLoginResponse: {0} Itt mi lehet a szar???", message);
+            Log.WriteLine("CreateLoginResponse: {0} Itt mi lehet a szar???", message);
 			string login = "";
 			string password = "";
 
@@ -431,15 +431,17 @@ namespace iContrAll.TcpServer
 				XmlNodeList elemListPassword = doc.GetElementsByTagName("password");
 				if (elemListLogin.Count > 0 && elemListPassword.Count > 0)
 				{
+                    Log.WriteLine("apploginbeolvasás");
                     string appLogin = ConfigFileManager.ConfigurationManager.LoginId;
+                    Log.WriteLine("Beolvasott applogin: " + appLogin);
                     string appPwd = ConfigFileManager.ConfigurationManager.Password;
 					login = elemListLogin[0].InnerXml;
 					password = elemListPassword[0].InnerXml;
 
-					Console.WriteLine("Login: {0} == {1}", login, appLogin);
-					Console.WriteLine("Password: {0} == {1}", password, appPwd);
+					Log.WriteLine("Login: {0} == {1}: {2}", login, appLogin, (login==appLogin).ToString());
+					Log.WriteLine("Password: {0} == {1}: {2}", password, appPwd, (password==appPwd).ToString());
 
-					if (login.Equals(appLogin) && password.Equals(appPwd))
+					if (login==appLogin && password==appPwd)
 					{
 						loginOK = true;
 					}

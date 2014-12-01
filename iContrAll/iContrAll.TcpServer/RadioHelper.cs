@@ -265,7 +265,7 @@ namespace iContrAll.TcpServer
                 #endregion
                 else
                     //redőny
-                    if (targetIdInMsg.StartsWith("OC1"))
+                    if (targetIdInMsg.StartsWith("SH1"))
                     {
                         #region Redőny üzenet megformálása
                         // most a redőny kétcsatornás, de ezt a változót átírva automatikusan jól fog működni.

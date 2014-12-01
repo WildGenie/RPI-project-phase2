@@ -84,7 +84,7 @@ namespace iContrAll.TcpServer
                             if (hour == now.Hour && minute == now.Minute)
                             {
                                 bool uOr1 = true;
-                                if (timer.DeviceId.StartsWith("OC1"))
+                                if (timer.DeviceId.StartsWith("SH1"))
                                 {
                                     uOr1 = false;
                                 }
@@ -105,7 +105,7 @@ namespace iContrAll.TcpServer
                             if (hour == now.Hour && minute == now.Minute)
                             {
                                 bool dOr0 = true;
-                                if (timer.DeviceId.StartsWith("OC1"))
+                                if (timer.DeviceId.StartsWith("SH1"))
                                 {
                                     dOr0 = false;
                                 }
@@ -203,7 +203,7 @@ namespace iContrAll.TcpServer
             }
             else
             // redőny
-            if (senderId.StartsWith("OC1"))
+            if (senderId.StartsWith("SH1"))
             {
                 int chCount = 2;
 
