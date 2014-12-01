@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LogHelper;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ namespace iContrAll.ConfigFileManager
 {
     public static class ConfigurationManager
     {
-        static string configFile = "/home/pi/iContrAll/bin/iContrAll.config";
+        static string configFile = @"/home/pi/iContrAll/bin/iContrAll.config";
         public static string LoginId 
         { 
             get
@@ -24,13 +25,22 @@ namespace iContrAll.ConfigFileManager
                             {
                                 if (reader.Name == "add")
                                 {
+                                    bool loginid = false;
                                     while(reader.MoveToNextAttribute())
                                     {
                                         switch (reader.Name)
                                         {
-                                            case "key": if (reader.Value != "loginid") continue;
+                                            case "key":
+                                                string val = reader.Value;
+                                                if (val == "loginid") loginid = true; else loginid = false;
                                                 break;
-                                            case "value": return reader.Value;
+                                            case "value":
+                                                if (loginid)
+                                                {
+                                                    string val1 = reader.Value;
+                                                    return reader.Value;
+                                                }
+                                                break;
                                             default:
                                                 break;
                                         }
@@ -39,11 +49,11 @@ namespace iContrAll.ConfigFileManager
                             }
                         }
                     }
-                    return string.Empty;
+                    return "";
                 }
                 catch(Exception)
                 {
-                    return string.Empty;
+                    return "";
                 }
             }
         }
@@ -62,13 +72,22 @@ namespace iContrAll.ConfigFileManager
                             {
                                 if (reader.Name == "add")
                                 {
+                                    bool password = false;
                                     while (reader.MoveToNextAttribute())
                                     {
                                         switch (reader.Name)
                                         {
-                                            case "key": if (reader.Value != "password") continue;
+                                            case "key":
+                                                string val = reader.Value;
+                                                if (val == "password") password = true; else password = false;
                                                 break;
-                                            case "value": return reader.Value;
+                                            case "value":
+                                                if (password)
+                                                {
+                                                    string val1 = reader.Value;
+                                                    return reader.Value;
+                                                }
+                                                break;
                                             default:
                                                 break;
                                         }
@@ -77,11 +96,11 @@ namespace iContrAll.ConfigFileManager
                             }
                         }
                     }
-                    return string.Empty;
+                    return "";
                 }
                 catch (Exception)
                 {
-                    return string.Empty;
+                    return "";
                 }
             }
         }
