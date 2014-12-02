@@ -38,7 +38,7 @@ namespace AutoUpdater
             {
                 Console.WriteLine("Update needed");
                 Update(selectedSource);
-                
+
                 UpdateAutoUpdaterConfig();
 
                 Restart();
@@ -186,23 +186,32 @@ namespace AutoUpdater
                 WebClient client = new WebClient();
 
                 var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "AutoUpdaterConfig.xml");
-
-                XDocument configXml = XDocument.Load(path);
-                var config = from cfg in configXml.Descendants("AutoUpdaterConfiguration")
-                             select cfg.Element("ConfigAddress");
-
-                Log.WriteLine("Cconfig file webaddress is: {0}", config.First().Value);
-
+                
                 try
                 {
+                    XDocument configXml = XDocument.Load(path);
+                    var config = from cfg in configXml.Descendants("AutoUpdaterConfiguration")
+                                 select cfg.Element("ConfigAddress");
+                
+                    Log.WriteLine("Config file webaddress is: {0}", config.First().Value);
                     ServicePointManager.ServerCertificateValidationCallback = (p1, p2, p3, p4) => true;
-                    client.DownloadFile(config.First().Value, path);
+                    string xml = client.DownloadString(config.First().Value);
+                    // ha nem tudta letölteni, továbbugrik exception-nel => nem írunk 0 hosszú fájlt
+                    using(var stream = File.CreateText(path))
+                    {
+                        stream.Write(xml);
+                    }
                 }
                 catch(Exception)
                 {
                     Log.WriteLine("Updating AutoUpdaterConfig.xml failed - downloading from callback location");
                     ServicePointManager.ServerCertificateValidationCallback = (p1, p2, p3, p4) => true;
-                    client.DownloadFile("https://www.dropbox.com/s/d2ptd6vknafimqx/AutoUpdaterConfig.xml?dl=1", path);
+                    string xml = client.DownloadString("https://www.dropbox.com/s/d2ptd6vknafimqx/AutoUpdaterConfig.xml?dl=1");
+                    // ha nem tudta letölteni, továbbugrik exception-nel
+                    using (var stream = File.CreateText(path))
+                    {
+                        stream.Write(xml);
+                    }
                 }
             }
             catch(Exception)
