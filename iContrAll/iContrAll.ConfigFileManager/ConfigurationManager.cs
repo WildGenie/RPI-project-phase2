@@ -11,6 +11,7 @@ namespace iContrAll.ConfigFileManager
     public static class ConfigurationManager
     {
         static string configFile = @"/home/pi/iContrAll/bin/iContrAll.config";
+        //static string configFile = "iContrAll.config";
         public static string LoginId 
         { 
             get
@@ -101,6 +102,43 @@ namespace iContrAll.ConfigFileManager
                 catch (Exception)
                 {
                     return "";
+                }
+            }
+            set
+            {
+                try
+                {
+                    XmlDocument doc = new XmlDocument();
+                    doc.Load(configFile);
+                    XmlNode root = doc.DocumentElement;
+                    XmlNodeList myNodes = doc.GetElementsByTagName("add");
+                    foreach (XmlNode node in myNodes)
+                    {
+                        XmlAttribute valueAttribute = null;
+                        bool isPassword = false;
+                        foreach (XmlAttribute attr in node.Attributes)
+                        {
+                            if (attr.Name == "key" && attr.Value == "password")
+                            {
+                                isPassword = true;
+                            }
+                            if (attr.Name == "value")
+                            {
+                                valueAttribute = attr;
+                            }
+                        }
+
+                        if (isPassword)
+                        {
+                            valueAttribute.Value = value;
+                            break;
+                        }
+                    }
+                    doc.Save(configFile);
+                }
+                catch (Exception e)
+                {
+                    Log.WriteLine(e);
                 }
             }
         }

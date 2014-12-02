@@ -263,6 +263,9 @@ namespace iContrAll.TcpServer
 				case (byte)MessageType.DelDevice:
 					DelDevice(message);
 					break;
+                case (byte)MessageType.CmdSetPassword:
+                    SetPassword(message);
+                    break;
 				case (byte)MessageType.eCmdGetPlaceList:
 					return BuildMessage(25, CreateAnswerPlaceList());
 				case (byte)MessageType.eCmdAddPlace:
@@ -307,6 +310,7 @@ namespace iContrAll.TcpServer
 
             return null;
 		}
+
 
         private void ResponseMessageHistory(string message)
         {
@@ -413,7 +417,7 @@ namespace iContrAll.TcpServer
 
 		private byte[] CreateLoginResponse(string message)
 		{
-            Log.WriteLine("CreateLoginResponse: {0} Itt mi lehet a szar???", message);
+            Log.WriteLine("CreateLoginResponse: {0}", message);
 			string login = "";
 			string password = "";
 
@@ -431,15 +435,13 @@ namespace iContrAll.TcpServer
 				XmlNodeList elemListPassword = doc.GetElementsByTagName("password");
 				if (elemListLogin.Count > 0 && elemListPassword.Count > 0)
 				{
-                    Log.WriteLine("apploginbeolvasás");
                     string appLogin = ConfigFileManager.ConfigurationManager.LoginId;
-                    Log.WriteLine("Beolvasott applogin: " + appLogin);
                     string appPwd = ConfigFileManager.ConfigurationManager.Password;
 					login = elemListLogin[0].InnerXml;
 					password = elemListPassword[0].InnerXml;
 
-					Log.WriteLine("Login: {0} == {1}: {2}", login, appLogin, (login==appLogin).ToString());
-					Log.WriteLine("Password: {0} == {1}: {2}", password, appPwd, (password==appPwd).ToString());
+					Log.WriteLine("Login: {0}", (login==appLogin).ToString());
+					Log.WriteLine("Password: {0}", (password==appPwd).ToString());
 
 					if (login==appLogin && password==appPwd)
 					{
@@ -464,6 +466,26 @@ namespace iContrAll.TcpServer
 
 			return response;
 		}
+
+        private void SetPassword(string message)
+        {
+            try
+            {
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(message);
+
+                XmlNodeList elemListPassword = doc.GetElementsByTagName("password");
+
+                if (elemListPassword.Count > 0)
+                {
+                    ConfigFileManager.ConfigurationManager.Password = elemListPassword[0].InnerXml;
+                }
+            }
+            catch (Exception e)
+            {
+                Log.WriteLine(e);
+            }
+        }
 
 		private byte[] CreateAnswerDeviceList()
 		{
