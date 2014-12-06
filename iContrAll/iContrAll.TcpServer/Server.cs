@@ -127,12 +127,14 @@ namespace iContrAll.TcpServer
         //private void ProcessReceivedRadioMessage(RadioMessageEventArgs e)
         private void ProcessReceivedRadioMessage(byte[] receivedBytes)
         {
-            //if (e.ErrorCode == -1)
+            //if (e.ErrorCode!= 0)
             //{
             //    Console.WriteLine("Radio '-1' error code-dal jött vissza, EXCEPTION az INTERRUPT-BAN!");
             //    // this.initRadio();
             //    return;
             //}
+
+            //byte[] receivedBytes = e.ReceivedBytes;
 
             if (receivedBytes == null)
             {
@@ -176,7 +178,7 @@ namespace iContrAll.TcpServer
                 }
 
                 string responseMsg = senderId + targetId + "60";
-
+                //responseMsg += "rssi=" + e.RSSI;
                 for (int i = 0; i < chCount; i++)
                 {
                     // összefűzés

@@ -62,6 +62,7 @@ namespace iContrAll.SPIRadio
         private byte state;
         //public byte[] data = new byte[RadioConstants.FIX_PACKET_LENGTH];
 
+        //public delegate void RadioMessageReceivedDelegate(RadioMessageEventArgs eventArgs);
         public delegate void RadioMessageReceivedDelegate(byte[] data);
         public event RadioMessageReceivedDelegate RadioMessageReveived;
 
@@ -286,14 +287,17 @@ namespace iContrAll.SPIRadio
                     {
                         Console.WriteLine("de CRC hiba");
                     }
-                    
+
                     Clear_Int_Flags(RadioConstants.P);
                     RX_Command(RadioConstants.P);
-                    // string s = Encoding.UTF8.GetString(Volatile.Read(ref data));
-                    // Console.WriteLine("Interrupt, message received: " + s);
+                    
+                    //byte rssi = ReadRSSI(RadioConstants.P);
+                    //var eArgs = new RadioMessageEventArgs(data, 0, rssi);
+                    
                     RadioMessageReceivedDelegate tempEvent = Volatile.Read(ref RadioMessageReveived);
                     if (tempEvent != null)
                     {
+                        //tempEvent(Volatile.Read(ref eArgs));
                         tempEvent(Volatile.Read(ref data));
                     }
                 }
@@ -527,6 +531,23 @@ namespace iContrAll.SPIRadio
             //Console.WriteLine("ReadCRCError Return előtt");
             return (t & 0x08)>0;
 
+        }
+
+        unsafe byte ReadRSSI(int p)
+        {
+            byte[] a = new byte[]{RadioConstants.CMD_GET_MODEM_STATUS,0};
+            fixed (byte* pA = a)
+            {
+                SPI.wiringPiSPIDataRW(p, pA, a.Length);
+            }
+            Timing.delayMicroseconds(10);
+            byte[] b = new byte[] { RadioConstants.CMD_CTS_READ, 0, 0, 0, 0 };
+            fixed (byte* pB = b)
+            {
+                SPI.wiringPiSPIDataRW(p, pB, b.Length);
+            }
+            CTS();
+            return b[4];
         }
     }
 }

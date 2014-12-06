@@ -12,6 +12,7 @@ namespace iContrAll.SPIRadio
         public const byte CMD_CTS_READ = 0x44;
         public const byte FIFO_INFO = 0x15;
         public const byte CMD_GET_INT_STATUS = 0x20;
+        public const byte CMD_GET_MODEM_STATUS = 0x22;
         public const byte CMD_START_RX = 0x32;
         public const byte CMD_POWER_UP = 0x02;
         public const byte CMD_TX_FIFO_WRITE = 0x66;
