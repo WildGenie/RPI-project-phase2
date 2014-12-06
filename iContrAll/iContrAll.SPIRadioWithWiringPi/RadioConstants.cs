@@ -12,6 +12,7 @@ namespace iContrAll.SPIRadio
         public const byte CMD_CTS_READ = 0x44;
         public const byte FIFO_INFO = 0x15;
         public const byte CMD_GET_INT_STATUS = 0x20;
+        public const byte CMD_GET_MODEM_STATUS = 0x22;
         public const byte CMD_START_RX = 0x32;
         public const byte CMD_POWER_UP = 0x02;
         public const byte CMD_TX_FIFO_WRITE = 0x66;
@@ -102,8 +103,12 @@ namespace iContrAll.SPIRadio
         public const int DD = 100;
         public const int FIX_PACKET_LENGTH = 64;
         public const int P = 0;
-        public const int TXRX = 1;
-        public const int PWDN = 4;
-        public const int INT = 6;
+        //public const int TXRX = 1;
+        //public const int PWDN = 4;
+        //public const int INT = 6;
+        // raspberrymodb+
+        public const int INT = 2;
+        public const int PWDN = 7;
+        public const int CS = 10;
     }
 }

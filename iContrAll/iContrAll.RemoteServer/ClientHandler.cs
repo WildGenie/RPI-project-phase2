@@ -1,6 +1,8 @@
-﻿using System;
+﻿using LogHelper;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
@@ -9,25 +11,117 @@ namespace iContrAll.RemoteServer
 {
     public class ClientHandler
     {
-        public TcpClient TcpChannel { get; set; }
-        public SslStream SslStream { get; set; }
+        private TcpClient tcpChannel;
+        private SslStream sslStream;
 
         // IP + port  vagy ami az üzenetben volt
-        public string Identifier { get; set; }
+        public string Id { get; private set; }
 
+        public EndPoint EndPoint { get { return tcpChannel.Client.RemoteEndPoint; } }
+
+        public string DemandedRaspberryId { get; set; }
+        
         public List<Message> MessageBuffer { get; set; }
 
-        public void Write(byte[] message, int numberOfBytesRead)
+        public bool Connected { get { return tcpChannel.Connected; } }
+
+        private List<RemoveClientEH> delegates = new List<RemoveClientEH>();
+
+        public delegate void RemoveClientEH(ClientHandler ch);
+
+        private event RemoveClientEH removeClient;
+        public event RemoveClientEH RemoveClient
         {
-            SslStream.Write(message, 0, numberOfBytesRead);
-            Console.WriteLine("SentToClient {0}", Encoding.UTF8.GetString(message, 0, numberOfBytesRead));
+            add
+            {
+                removeClient += value;
+                delegates.Add(value);
+            }
+            remove
+            {
+                removeClient -= value;
+                delegates.Remove(value);
+            }
+        }
+
+        public ClientHandler(TcpClient tcpChannel, SslStream sslStream, RemoveClientEH removeClient)
+        {
+            this.tcpChannel = tcpChannel;
+            this.sslStream = sslStream;
+            this.Id = this.tcpChannel.Client.RemoteEndPoint.ToString();
+            this.RemoveClient += removeClient;
+        }
+
+        public bool Write(byte[] message, int numberOfBytesRead)
+        {
+            try
+            {
+                if (!tcpChannel.Connected)
+                {
+                    Log.WriteLine("Client is not connected {0} in {1}", Id, "ClientHandler.Write()");
+                    return false;
+                }
+                if (sslStream.CanWrite)
+                {
+                    sslStream.Write(message, 0, numberOfBytesRead);
+                    sslStream.Flush();
+                    Log.WriteLine("SentToClient {1} {0} in {2}", Encoding.UTF8.GetString(message, 0, numberOfBytesRead), Id, "ClientHandler.Write()");
+
+                    return true;
+                }
+                else
+                {
+                    Log.WriteLine("Cannot write to sslStream at {0} in {1}", Id, "ClientHandler.Write()");
+                    return false;
+                }
+            }
+            catch(Exception ex)
+            {
+                Log.WriteLine("Exception while trying to write to Client {0} in {1}", Id, "ClientHandler.Write()");
+                Log.WriteLine(ex.ToString());
+            }
+            return false;
         }
         
-        public byte[] Read()
+        public int Read(byte[] buffer)
         {
-            byte[] buffer = new byte[32768];
-            int numberOfBytesRead = SslStream.Read(buffer,0, buffer.Length);
-            return buffer;
+            int numberOfBytesRead = -1;
+            try
+            {
+                if (sslStream.CanRead)
+                    numberOfBytesRead = sslStream.Read(buffer, 0, buffer.Length);
+            }
+            catch(Exception ex)
+            {
+                Log.WriteLine("Exception while reading from Client {0} in {1}", Id, "ClientHandler.Read()");
+                Log.WriteLine(ex.ToString());
+            }
+            return numberOfBytesRead;
+        }
+
+        public void Close()
+        {
+            try
+            {
+                if (this.removeClient != null)
+                {
+                    this.removeClient(this);
+                }
+
+                foreach (var d in delegates)
+                {
+                    removeClient -= d;
+                }
+                delegates.Clear();
+
+                sslStream.Close();
+                tcpChannel.Close();
+            }
+            catch(Exception ex)
+            {
+                Log.WriteLine("Exception while closing Client connection {0} in {1}", Id, "ClientHandler.Close()");
+                Log.WriteLine(ex.ToString());
+            }
         }
     }
 }

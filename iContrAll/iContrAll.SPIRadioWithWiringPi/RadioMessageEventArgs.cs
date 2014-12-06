@@ -18,10 +18,13 @@ namespace iContrAll.SPIRadio
 
         public int ErrorCode { get; set; }
 
-        public RadioMessageEventArgs(byte[] receivedBytes, int errorCode)
+        public byte RSSI { get; set; }
+
+        public RadioMessageEventArgs(byte[] receivedBytes, int errorCode, byte rssi)
         {
             this.ReceivedBytes = receivedBytes;
             this.ErrorCode = errorCode;
+            this.RSSI = rssi;
         }
     }
 }

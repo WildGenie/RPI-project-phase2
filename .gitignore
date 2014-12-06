@@ -38,6 +38,7 @@ obj/
 [Rr]elease*/
 !iContrAll.Executables/iContrAll.TcpServer.exe
 !iContrAll.Executables_profil/iContrAll.TcpServer.exe
+!iContrAll.Executables_remote/iContrAll.TcpServer.exe
 
 # Visual C++ cache files
 ipch/

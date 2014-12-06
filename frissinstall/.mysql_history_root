@@ -1,0 +1,5 @@
+create user 'icontrall_user'@'localhost' identified by 'trObOtsElEc';
+create database iContrAll
+;
+grant all privileges on iContrAll.* to 'icontrall_user'@'localhost';
+quit;

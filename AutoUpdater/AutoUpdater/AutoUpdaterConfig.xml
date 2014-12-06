@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoUpdaterConfiguration>
+	<Address>https://www.dropbox.com/s/exvmvp38si8kwu2/latestversion.txt?dl=1</Address>
+	<RemoteFileName>latestversion.txt</RemoteFileName>
+	<ConfigAddress>https://www.dropbox.com/s/d2ptd6vknafimqx/AutoUpdaterConfig.xml?dl=1</ConfigAddress>
+</AutoUpdaterConfiguration>

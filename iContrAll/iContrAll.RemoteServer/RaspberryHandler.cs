@@ -1,38 +1,153 @@
-﻿using System;
+﻿using LogHelper;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 namespace iContrAll.RemoteServer
 {
 	class RaspberryHandler
 	{
 		public string Id { get; set; }
-		public TcpClient TcpChannel { get; set; }
-		public SslStream SslStream { get; set; }
+        private TcpClient tcpChannel;
+        private SslStream sslStream;
 
+        public string EndPoint;
 
+        //public bool Connected { get { return tcpChannel.Connected; } }
+        //public bool CanWrite { get { return sslStream.CanWrite; } }
 
-		internal void Close()
+        private List<RemoveRaspberryEH> delegates = new List<RemoveRaspberryEH>();
+
+        public delegate void RemoveRaspberryEH(RaspberryHandler rh);
+
+        private event RemoveRaspberryEH removeRaspberry;
+
+        public event RemoveRaspberryEH RemoveRaspberry
+        {
+            add
+            {
+                removeRaspberry += value;
+                delegates.Add(value);
+            }
+            remove
+            {
+                removeRaspberry -= value;
+                delegates.Remove(value);
+            }
+        }
+
+        Timer lastPingTimer;
+        bool hadPing = false;
+
+        public RaspberryHandler(TcpClient raspberryTcpClient, System.Net.Security.SslStream sslStream, RemoveRaspberryEH removeRaspberryEH)
+        {
+            this.tcpChannel = raspberryTcpClient; 
+            this.EndPoint = this.tcpChannel.Client.RemoteEndPoint.ToString();
+            this.sslStream = sslStream;
+            this.RemoveRaspberry += removeRaspberryEH;
+            // 5 percenként ellenőriz, az első ellenőrzés 5 percnél, utána igazából semmit, mert eltűntetjük
+            this.lastPingTimer = new Timer(lastPingTimerCallback, null, 300000, 300000);
+        }
+
+        public void ResetTimeOutTimer()
+        {
+            hadPing = true;
+        }
+
+        private void lastPingTimerCallback(object state)
+        {
+            if (this.hadPing)
+            {
+                this.hadPing = false;
+            }
+            else
+            {
+                this.Close();
+            }
+        }
+
+		public void Close()
 		{
-			SslStream.Close();
-			TcpChannel.Close();
+            try
+            {
+                if (this.lastPingTimer != null)
+                {
+                    this.lastPingTimer.Dispose();
+                }
+                sslStream.Close();
+                if (sslStream!=null) sslStream.Dispose();
+                tcpChannel.Close();
+
+                if (this.removeRaspberry!=null)
+                {
+                    this.removeRaspberry(this);
+                }
+
+                foreach (var d in delegates)
+                {
+                    removeRaspberry -= d;
+                }
+                delegates.Clear();
+
+                Log.WriteLine("RaspberryHandler {0} closed", Id);
+            }
+            catch (Exception)
+            {
+                Log.WriteLine("Exception while closing Raspberry connection {0} in {1}", Id, "RaspberryHandler.Close()");
+            }
 		}
 
-		internal byte[] Read()
-		{
-			byte[] readBuffer = new byte[32768];
-			int numberOfBytesRead = SslStream.Read(readBuffer, 0, readBuffer.Length);
+        public int Read(byte[] buffer)
+        {
+            int numberOfBytesRead = -1;
+            try
+            {
+                if (sslStream.CanRead)
+                    numberOfBytesRead = sslStream.Read(buffer, 0, buffer.Length);
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine("Exception while reading from Raspberry {0} in {1}", Id, "RaspberryHandler.Read()");
+                Log.WriteLine(ex.ToString());
+            }
+            return numberOfBytesRead;
+        }
 
-			return readBuffer;
-		}
+        public bool Write(byte[] message, int numberOfBytesRead)
+        {
+            try
+            {
+                if (!tcpChannel.Connected)
+                {
+                    Log.WriteLine("Raspberry is not connected {0} in {1}", Id, "RaspberryHandler.Write()");
+                    return false;
+                }
+                if (sslStream.CanWrite)
+                {
+                    sslStream.Write(message, 0, numberOfBytesRead);
+                    sslStream.Flush();
+                    Log.WriteLine("SentToRaspberry {1} {0} in {2}", Encoding.UTF8.GetString(message, 0, numberOfBytesRead), Id, "RaspberryHandler.Write()");
 
-		internal void Write(byte[] sendBuffer)
-		{
-			SslStream.Write(sendBuffer);
-		}
+                    return true;
+                }
+                else
+                {
+                    Log.WriteLine("Cannot write to sslStream at {0} in {1}", Id, "RaspberryHandler.Write()");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine("Exception while trying to write to Raspberry {0} in {1}", Id, "RaspberryHandler.Write()");
+                Log.WriteLine(ex.ToString());
+            }
+            return false;
+        }
 
 		internal void SendCreateTunnelFor(string msg)
 		{
@@ -50,8 +165,8 @@ namespace iContrAll.RemoteServer
 			System.Buffer.BlockCopy(lengthArray, 0, answer, msgNbrArray.Length, lengthArray.Length);
 			System.Buffer.BlockCopy(message, 0, answer, msgNbrArray.Length + lengthArray.Length, message.Length);
 
-			SslStream.Write(answer);
-		
+			sslStream.Write(answer);
+            sslStream.Flush();
 		}
 	}
 }

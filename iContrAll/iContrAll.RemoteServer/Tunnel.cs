@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LogHelper;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Security;
@@ -9,23 +10,25 @@ namespace iContrAll.RemoteServer
 {
     class Tunnel
     {
-        public SslStream Rasberry { get; set; }
+        public RaspberryHandler Raspberry { get; set; }
         public ClientHandler Client { get; set; }
 
         Thread raspberryThread;
         Thread clientThread;
-        public Tunnel(SslStream rh, ClientHandler ch)
+
+        public Tunnel(RaspberryHandler rh, ClientHandler ch)
         {
-            this.Rasberry = rh;
+            this.Raspberry = rh;
             this.Client = ch;
 
             foreach (var m in ch.MessageBuffer)
             {
                 byte[] buffer = BuildMessage((byte)m.Type, Encoding.UTF8.GetBytes(m.Content));
-
-                rh.Write(buffer);
+                rh.Write(buffer, buffer.Length);
             }
-
+            
+            Log.WriteLine("Tunnel CREATED: Raspberry {0} - Client {1}", rh.Id, ch.Id);
+            
             raspberryThread = new Thread(ListenForRasberryMessages);
             clientThread = new Thread(ListenForClientMessages);
 
@@ -60,51 +63,58 @@ namespace iContrAll.RemoteServer
                 try
                 {
                     // Read the client's test message.
-                    numberOfBytesRead = Client.SslStream.Read(buffer, 0, buffer.Length);
-                    Console.WriteLine("MessageFromClient: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
+                    numberOfBytesRead = Client.Read(buffer);
+                    if (numberOfBytesRead >= 0)
+                        Log.WriteLine("MessageFromClient {1}: {0} in {2}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead), Client.Id, "Tunnel.ListenForClientMessages()");
                 }
-                catch (ArgumentOutOfRangeException)
+                catch (ArgumentOutOfRangeException ex)
                 {
-                    Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
+                    Log.WriteLine("The size of the message has exceeded the maximum size allowed in {0}", "Tunnel.ListenForClientMessages()");
+                    Log.WriteLine(ex.ToString());
                     continue;
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Console.WriteLine("Exception while reading from socket Tunnel.ListenForClientMessages");// {0}");//, sslStream..Endpoint);
-                    Console.WriteLine("Exception: {0}", e.Message);
-                    if (e.InnerException != null)
-                    {
-                        Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
-                    }
+                    Log.WriteLine("Exception while reading from socket in Tunnel.ListenForClientMessages()");// {0}");//, sslStream..Endpoint);
+                    Log.WriteLine(ex.ToString());
                     break;
                 }
 
                 if (numberOfBytesRead <= 0)
                 {
-                    //Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, tcpClient.RemoteEndPoint.ToString());
-                    Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);//, tcpClient.RemoteEndPoint.ToString());
+                    //Log.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, tcpClient.RemoteEndPoint.ToString());
+                    Log.WriteLine("NumberOfBytesRead from {2}: {0} in {1}", numberOfBytesRead, "Tunnel.ListenForClientMessages()", Client.Id);
+                    Log.WriteLine("\t-> Closing connection between {0} and {1}", Client.Id, Raspberry.Id);
+                    // kliens megszüntette a kapcsolatot, számoljuk fel ezt a tunnelt
+                    // értesíteni kell a Raspberry-t és a klienst is eltávolítjuk a szerver nyilvántartásából
+                    Raspberry.Close();
+                    Client.Close();
+                    Log.WriteLine("Tunnel CLOSED: Raspberry {0} - Client {1}", Raspberry.Id, Client.Id);
                     break;
                 }
 
                 try
                 {
-                    Rasberry.Write(buffer, 0, numberOfBytesRead);
-                    Console.WriteLine("SentToRaspberry: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("");
-                    Console.WriteLine("Exception at Rasberry.Write() in Tunnel.ListenForClientMessages(): {0}", e.Message);
-                    if (e.InnerException != null)
+                    bool successWrite = Raspberry.Write(buffer, numberOfBytesRead);
+                    if (!successWrite)
                     {
-                        Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                        Log.WriteLine("Raspberry {0} is not connected in {1}.", Raspberry.Id, "Tunnel.ListenForClientMessages()");
+                        Log.WriteLine("\t-> Closing connection between {0} and {1}", Client.Id, Raspberry.Id);
+                        // Close tunnel, close connection to raspberry.
+                        Client.Close();
+                        Raspberry.Close();
+                        Log.WriteLine("Tunnel CLOSED: Raspberry {0} - Client {1}", Raspberry.Id, Client.Id);
+                        break;
                     }
+                    Log.WriteLine("SentToRaspberry {1} {0} in {2}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead), Raspberry.Id, "Tunnel.ListenForClientMessages()");
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteLine("Exception in tunnel between\n\tClient: {0} and Rasbperry: {1}\n\tin {2}", Client.Id, Raspberry.Id, "Tunnel.ListenForClientMessages()");
+                    Log.WriteLine(ex.ToString());
                     break;
                 }
             }
-
-
-            
         }
 
         private void ListenForRasberryMessages(object obj)
@@ -116,40 +126,57 @@ namespace iContrAll.RemoteServer
             {
                 try
                 {
-                    // Read the client's test message.
-                    numberOfBytesRead = Rasberry.Read(buffer, 0, buffer.Length);
-                    Console.WriteLine("MessageFromRaspberry: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
+                    numberOfBytesRead = Raspberry.Read(buffer);
+                    if (numberOfBytesRead >= 0)
+                        Log.WriteLine("MessageFromRaspberry {1}: {0} in {2}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead), Raspberry.Id, "Tunnel.ListenForRaspberryMessages()");
+                        //Log.WriteLine("MessageFromRaspberry: {0}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead));
                 }
-                catch (ArgumentOutOfRangeException)
+                catch (ArgumentOutOfRangeException ex)
                 {
-                    Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
+                    Log.WriteLine("The size of the message has exceeded the maximum size allowed in {0}", "Tunnel.ListenForRaspberryMessages()");
+                    Log.WriteLine(ex.ToString());
                     continue;
                 }
-                //catch (Exception)
-                //{
-                //    Console.WriteLine("Exception while reading from socket in Tunnel.ListenForRasberryMessages");// {0}");//, sslStream..Endpoint);
-                //    break;
-                //}
-
-                if (numberOfBytesRead <= 0)
+                catch (Exception ex)
                 {
-                    //Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, tcpClient.RemoteEndPoint.ToString());
-                    Console.WriteLine("NumberOfBytesRead: {0}", numberOfBytesRead);//, tcpClient.RemoteEndPoint.ToString());
+                    Log.WriteLine("Exception while reading from socket in Tunnel.ListenForRasberryMessages()");
+                    Log.WriteLine(ex.ToString());
                     break;
                 }
 
-                //try
-                //{
-                    Client.Write(buffer, numberOfBytesRead);
-                //}
-                //catch (Exception)
-                //{
-                //    break;
-                //}
+                if (numberOfBytesRead <= 0)
+                {
+                    Log.WriteLine("NumberOfBytesRead from {2}: {0} in {1}", numberOfBytesRead, "Tunnel.ListenForRaspberryMessages()", Raspberry.Id);
+                    Log.WriteLine("\t-> Closing connection between {0} and {1}", Raspberry.Id, Client.Id);
+                    Raspberry.Close();
+                    Client.Close();
+                    Log.WriteLine("Tunnel CLOSED: Raspberry {0} - Client {1}", Raspberry.Id, Client.Id);
+                    break;
+                }
+
+                try
+                {
+                    bool successWrite = Client.Write(buffer, numberOfBytesRead);
+                    
+                    if (!successWrite)
+                    {
+                        Log.WriteLine("Client {0} is not connected in {1}.", Client.Id, "Tunnel.ListenForRasberryMessages()");
+                        Log.WriteLine("\t-> Closing connection between {0} and {1}", Raspberry.Id, Client.Id);
+                        // Close tunnel, close connection to raspberry.
+                        Client.Close();
+                        Raspberry.Close();
+                        Log.WriteLine("Tunnel CLOSED: Raspberry {0} - Client {1}", Raspberry.Id, Client.Id);
+                        break;
+                    }
+                    Log.WriteLine("SentToClient {1} {0} in {2}", Encoding.UTF8.GetString(buffer, 0, numberOfBytesRead), Raspberry.Id, "Tunnel.ListenForRaspberryMessages()");
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteLine("Exception in tunnel between\n\tClient: {0} and Rasbperry: {1}\n\tin {2}", Client.Id, Raspberry.Id, "Tunnel.ListenForRaspberryMessages()");
+                    Log.WriteLine(ex.ToString());
+                    break;
+                }
             }
         }
-
-
-
     }
 }

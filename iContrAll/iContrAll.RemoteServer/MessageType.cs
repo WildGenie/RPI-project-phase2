@@ -10,7 +10,7 @@ namespace iContrAll.RemoteServer
         LoginRequest = 14,
         IdentityMsg = -1,
         CreateThreadFor = 63,
-        Ping = 251
+        Ping = 62
     }
 
     public class Message

@@ -1,15 +1,15 @@
 ﻿using iContrAll.SPIRadio;
 using System;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
-using System.Linq;
-using System.Text;
 using System.Collections.Generic;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
-using System.Security.Authentication;
 using System.Globalization;
+using System.Linq;
+using System.Net;
+using System.Net.Security;
+using System.Net.Sockets;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Threading;
 
 namespace iContrAll.TcpServer
 {
@@ -30,6 +30,10 @@ namespace iContrAll.TcpServer
         string certificatePath;
         string certificatePassphrase;
 
+        Timer remotePingTimer;
+
+        Timer actionTimer;
+
 		public Server(int port, string remoteServerAddress, int remoteServerPort,
             string serverCertificateName, string certificatePath, string certificatePassphrase)
 		{
@@ -39,27 +43,98 @@ namespace iContrAll.TcpServer
             this.certificatePassphrase = certificatePassphrase;
             this.certificatePath = certificatePath;
 
-			Radio.Instance.RadioMessageReveived += ProcessReceivedRadioMessage;
+            Radio.Instance.RadioMessageReveived += ProcessReceivedRadioMessage;
 
-			this.port = port;
-			this.tcpListener = new TcpListener(IPAddress.Any, this.port);
-            
-			this.listenThread = new Thread(new ThreadStart(ListenForLocalLANClients));
-			this.listenThread.Start();
+            this.port = port;
+            this.tcpListener = new TcpListener(IPAddress.Any, this.port);
+
+            this.listenThread = new Thread(new ThreadStart(ListenForLocalLANClients));
+            this.listenThread.Start();
 
             this.remoteServerThread = new Thread(new ThreadStart(RemoteServerManaging));
             this.remoteServerThread.Start();
+
+            this.remotePingTimer = new Timer(PingRemoteServer);
+            DateTime now = DateTime.Now;
+            this.actionTimer = new Timer(RunTimedActions, null, 
+                                         (60 - now.Second) * 1000 - now.Millisecond, 
+                                         60000);
 		}
+
+        private void RunTimedActions(object state)
+        {
+            using(var dal = new DataAccesLayer())
+            {
+                string id = ConfigFileManager.ConfigurationManager.LoginId.Substring(2);
+
+                DateTime now = DateTime.Now;
+
+                foreach (var timer in dal.GetTimers())
+                {
+                    int n;
+                    bool isStartTimeNumeric = int.TryParse(timer.StartTime, out n);
+                    bool isEndTimeNumeric = int.TryParse(timer.EndTime, out n);
+                    
+                    if (isStartTimeNumeric && timer.StartTime.Length == 4)
+                    {
+                        int hour = 0;
+                        int minute = 0;
+                        if (int.TryParse(timer.StartTime.Substring(0, 2), out hour) && int.TryParse(timer.StartTime.Substring(2, 2), out minute))
+                        {
+                            if (hour == now.Hour && minute == now.Minute)
+                            {
+                                bool uOr1 = true;
+                                if (timer.DeviceId.StartsWith("SH1"))
+                                {
+                                    uOr1 = false;
+                                }
+
+                                string message = string.Format("{0}{1}67ch{4}{2}={3}", id, timer.DeviceId, timer.DeviceChannel, uOr1?"1":"u", uOr1?"":"s");
+
+                                RadioHelper.SendCommandOnRadio(message);
+                            }
+                        }
+                    }
+
+                    if (isEndTimeNumeric && timer.EndTime.Length == 4)
+                    {
+                        int hour = 0;
+                        int minute = 0;
+                        if (int.TryParse(timer.EndTime.Substring(0, 2), out hour) && int.TryParse(timer.EndTime.Substring(2, 2), out minute))
+                        {
+                            if (hour == now.Hour && minute == now.Minute)
+                            {
+                                bool dOr0 = true;
+                                if (timer.DeviceId.StartsWith("SH1"))
+                                {
+                                    dOr0 = false;
+                                }
+
+                                string message = string.Format("{0}{1}67ch{4}{2}={3}", id, timer.DeviceId, timer.DeviceChannel, dOr0 ? "0" : "d", dOr0 ? "" : "s");
+
+                                RadioHelper.SendCommandOnRadio(message);
+
+                                dal.RemoveTimer(timer);
+                            }
+                        }
+                    }
+
+                    Thread.Sleep(250);
+                }
+            }
+        }
 
         //private void ProcessReceivedRadioMessage(RadioMessageEventArgs e)
         private void ProcessReceivedRadioMessage(byte[] receivedBytes)
         {
-            //if (e.ErrorCode == -1)
+            //if (e.ErrorCode!= 0)
             //{
             //    Console.WriteLine("Radio '-1' error code-dal jött vissza, EXCEPTION az INTERRUPT-BAN!");
             //    // this.initRadio();
             //    return;
             //}
+
+            //byte[] receivedBytes = e.ReceivedBytes;
 
             if (receivedBytes == null)
             {
@@ -73,7 +148,7 @@ namespace iContrAll.TcpServer
             string targetId = Encoding.UTF8.GetString(receivedBytes.Skip(8).Take(8).ToArray());
             Console.WriteLine(senderId + "=>" + targetId);
             // ha nem mihozzánk érkezik az üzenet, eldobjuk
-            if (targetId != System.Configuration.ConfigurationManager.AppSettings["loginid"].Substring(2)) return;
+            if (targetId != ConfigFileManager.ConfigurationManager.LoginId.Substring(2)) return;
 
             //// debughoz
             //foreach (var b in receivedBytes)
@@ -103,7 +178,7 @@ namespace iContrAll.TcpServer
                 }
 
                 string responseMsg = senderId + targetId + "60";
-
+                //responseMsg += "rssi=" + e.RSSI;
                 for (int i = 0; i < chCount; i++)
                 {
                     // összefűzés
@@ -119,6 +194,10 @@ namespace iContrAll.TcpServer
                     string power = "chi" + (i + 1) + "="+((powerValues[i] / 100) % 10).ToString() + ((powerValues[i] / 10) % 10).ToString() + (powerValues[i] % 10).ToString();
 
                     responseMsg += "&" + power;
+
+                    string timer = "cht" + (i + 1) + "=" + "X2200";
+
+                    responseMsg += "&" + timer;
                 }
                 Console.WriteLine("SendToAllClient: " + responseMsg);
                 SendToAllClient(BuildMessage(1, Encoding.UTF8.GetBytes(responseMsg)));
@@ -126,7 +205,7 @@ namespace iContrAll.TcpServer
             }
             else
             // redőny
-            if (senderId.StartsWith("OC1"))
+            if (senderId.StartsWith("SH1"))
             {
                 int chCount = 2;
 
@@ -158,6 +237,10 @@ namespace iContrAll.TcpServer
                     string dimm = "chd" + (i + 1) + "=" + ((dimValues[i] / 100) % 10).ToString() + ((dimValues[i] / 10) % 10).ToString() + (dimValues[i] % 10).ToString();
 
                     responseMsg += "&" + dimm;
+
+                    string timer = "cht" + (i + 1) + "=" + "X2200";
+
+                    responseMsg += "&" + timer;
 
                     //string power = "chi" + (i + 1) + "=" + ((powerValues[i] / 100) % 10).ToString() + ((powerValues[i] / 10) % 10).ToString() + (powerValues[i] % 10).ToString();
 
@@ -233,9 +316,6 @@ namespace iContrAll.TcpServer
 
         public void SendToAllClient(byte[] bytesToSend)
         {
-            var asyncEvent = new SocketAsyncEventArgs();
-
-            asyncEvent.SetBuffer(bytesToSend, 0, bytesToSend.Length);
             //foreach (var i in asyncEvent.Buffer)
             //{
             //    Console.Write(i + "|");
@@ -246,7 +326,9 @@ namespace iContrAll.TcpServer
             {
                 foreach (var c in clientList)
                 {
-                    c.SendRadioMessage(asyncEvent);
+                    //var asyncEvent = new SocketAsyncEventArgs();
+                    //asyncEvent.SetBuffer(bytesToSend, 0, bytesToSend.Length);
+                    c.SendRadioMessage(bytesToSend);
                 }
             }
         }
@@ -255,41 +337,19 @@ namespace iContrAll.TcpServer
 
         private void RemoteServerManaging()
         {
-            if (!ConnectToRemoteServer()) return;
+            // blokkol, amíg nem sikerül csatlakozni
+            ConnectToRemoteServer();
+
             var readBuffer = new byte[bufferSize];
             int numberOfBytesRead = -1;
-            try
+
+            while (true)
             {
-                if (sslStream.CanRead)
+                try
                 {
-                    while (true)
+                    if ((numberOfBytesRead = sslStream.Read(readBuffer, 0, bufferSize)) > 0)
                     {
-                        try
-                        {
-                            numberOfBytesRead = sslStream.Read(readBuffer, 0, bufferSize);
-                        }
-                        catch (ArgumentOutOfRangeException)
-                        {
-                            Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
-                            continue;
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("Exception while reading from socket {0} in Server.RemoteServerManaging", this.remoteServer.Client.RemoteEndPoint);
-                            Console.WriteLine(ex.Message);
-                            if (ex.InnerException!=null)
-                            { Console.WriteLine(ex.InnerException.Message); }
-
-                            break;
-                        }
-
-                        if (numberOfBytesRead <= 0)
-                        {
-                            Console.WriteLine("NumberOfBytesRead: {0} from {1}", numberOfBytesRead, remoteServer.Client.RemoteEndPoint.ToString());
-                            break;
-                        }
-
-                        Console.WriteLine("Message (length={1}) received from: {0} at {2}", remoteServer.Client.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
+                        Console.WriteLine("Message (length={1}) received from: {0} at {2}", remoteServer.Client.RemoteEndPoint.ToString(), numberOfBytesRead, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture));
 
                         byte[] readBytes = readBuffer.Take(numberOfBytesRead).ToArray();
 
@@ -298,17 +358,36 @@ namespace iContrAll.TcpServer
                             ProcessMessage(message);
                         }
                     }
+                    else
+                    {
+                        Console.WriteLine("ZeroBytesRead: {0} from remoteServer {1}", numberOfBytesRead, remoteServer.Client.RemoteEndPoint.ToString());
+                        remotePingTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                        sslStream.Close();
+                        remoteServer.Close();
+                        Thread.Sleep(10000);
+                    }
                 }
-            }
-            finally
-            {
-
-                sslStream.Close(); // including clientStream.Close();
-                remoteServer.Close();
-                Console.WriteLine("RemoteServer zár");
-
-                Thread.Sleep(5000);
-                RemoteServerManaging();
+                //catch (ArgumentOutOfRangeException)
+                //{
+                //    Console.WriteLine("The size of the message has exceeded the maximum size allowed.");
+                //    continue;
+                //}
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Exception while reading from socket {0} in Server.RemoteServerManaging", this.remoteServer.Client.RemoteEndPoint);
+                    Console.WriteLine(ex.Message);
+                    if (ex.InnerException != null)
+                    { Console.WriteLine(ex.InnerException.Message); }
+                    remotePingTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                    sslStream.Close();
+                    remoteServer.Close();
+                    Thread.Sleep(10000);
+                }
+                finally
+                {
+                    // blokkol amíg nem csatlakozott újra
+                    ConnectToRemoteServer();
+                }
             }
         }
 
@@ -457,13 +536,15 @@ namespace iContrAll.TcpServer
 
 		}
 
-        private bool ConnectToRemoteServer()
+        private void ConnectToRemoteServer()
         {
-            while (true)
+            while (this.remoteServer == null || this.remoteServer.Client == null || !this.remoteServer.Connected)
             {
+                //if (this.remoteServer == null) this.remoteServer = new TcpClient();
+                this.remoteServer = new TcpClient();
                 try
                 {
-                    this.remoteServer = new TcpClient(remoteServerAddress, remoteServerPort);
+                    this.remoteServer.Connect(remoteServerAddress, remoteServerPort);
                     Console.WriteLine("Connected to remoteserver");
                     this.sslStream = new SslStream(
                         remoteServer.GetStream(),
@@ -472,14 +553,15 @@ namespace iContrAll.TcpServer
                         new LocalCertificateSelectionCallback(CertificateSelectionCallback)
                     );
 
-                    X509Certificate cert = new X509Certificate2(certificatePath, certificatePassphrase); //"/home/pi/SslClientTest2/bin/Debug/server.p12", "allcontri");
+                    X509Certificate cert = new X509Certificate2(certificatePath, certificatePassphrase);
                     X509CertificateCollection certs = new X509CertificateCollection();
                     certs.Add(cert);
 
                     // The server name must match the name on the server certificate. 
                     try
                     {
-                        sslStream.AuthenticateAsClient(serverCertificateName,
+                        sslStream.AuthenticateAsClient(
+                            serverCertificateName,
                             certs,
                             SslProtocols.Tls,
                             false); // check cert revokation);
@@ -493,28 +575,25 @@ namespace iContrAll.TcpServer
                         }
                         Console.WriteLine("Authentication failed - closing the connection.");
                         remoteServer.Close();
-                        return false;
                     }
 
                     // Sending the device id to the server inside the login message
-                    byte[] message = Encoding.UTF8.GetBytes(System.Configuration.ConfigurationManager.AppSettings["loginid"]);
+                    byte[] message = Encoding.UTF8.GetBytes(ConfigFileManager.ConfigurationManager.LoginId);
                     byte[] data = BuildMessage(-1, message);
                     //NetworkStream stream = remoteServer.GetStream();
                     sslStream.Write(data, 0, data.Length);
                     sslStream.Flush();
-
-                    return true;
                 }
                 catch (ArgumentNullException e)
                 {
                     Console.WriteLine("ArgumentNullException: {0}", e);
-                    Thread.Sleep(5000);
+                    remoteServer.Close();
+
                 }
-                catch (SocketException e)
+                catch (SocketException)
                 {
-                    // Console.WriteLine("SocketException: {0}", e);
                     Console.WriteLine("SocketException: Cannot connect to remote server.");
-                    Thread.Sleep(5000);
+                    remoteServer.Close();
                 }
                 catch (Exception e)
                 {
@@ -524,19 +603,39 @@ namespace iContrAll.TcpServer
                     {
                         Console.WriteLine(e.InnerException.Message);
                     }
+                    remoteServer.Close();
                 }
+
+                if (this.remoteServer == null || this.remoteServer.Client == null || !this.remoteServer.Connected) 
+                    Thread.Sleep(10000);
+
+                //try
+                //{
+                //    if (!this.remoteServer.Connected) Thread.Sleep(10000);
+                //}
+                //catch(Exception e)
+                //{
+                //    Thread.Sleep(10000);
+                //}
+                
             }
+
+            this.remotePingTimer.Change(60000, 60000);
         }
 
-        private void PingRemoteServer()
+        private void PingRemoteServer(object state)
         {
             try
             {
-                this.sslStream.Write(BuildMessage(-3, null));
+                Console.WriteLine("Sending ping message");
+                this.sslStream.Write(BuildMessage((int)MessageType.PingMessage, new byte[] { }));
                 this.sslStream.Flush();
             }
-            catch(Exception)
+            catch (Exception)
             {
+                Console.WriteLine("RemoteServerPing failed");
+                // stop the ping
+                remotePingTimer.Change(Timeout.Infinite, Timeout.Infinite);
                 // we need to reconnect
                 ConnectToRemoteServer();
             }

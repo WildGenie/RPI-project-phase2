@@ -31,6 +31,7 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Configuration;
 
 namespace iContrAll.SsdpServerLib
 {
@@ -127,20 +128,25 @@ namespace iContrAll.SsdpServerLib
                 {
                     buffer.Socket.ReceiveFrom(buffer.Buffer, ref buffer.SenderEndPoint);
 
-                    // Console.WriteLine("Received from: {0}", buffer.SenderIPEndPoint.ToString());
-
                     var dgram = buffer.Buffer;
+                    //Console.WriteLine("Received from: {0}: {1}", buffer.SenderIPEndPoint.ToString(), Encoding.ASCII.GetString(dgram));
                     if (dgram != null && dgram.Length > 0 && IsDgramMSearch(dgram))
                     {
-                        Console.WriteLine("M-SEARCH Received from: {0}", buffer.SenderIPEndPoint.ToString());
                         // Console.WriteLine("Datagram:\n{0}", Encoding.UTF8.GetString(dgram));
-
-                        Socket responseSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                        byte[] sendbuf = CreateAliveResponse(getLocalIPAddress(), identifier, identifier, 900);
-                        //byte[] sendbuf = Encoding.UTF8.GetBytes(identifier);
-
-                        responseSocket.SendTo(sendbuf, buffer.SenderIPEndPoint);
-                        //Console.WriteLine("Response sent to: {0}\n{1}", buffer.SenderIPEndPoint, Encoding.UTF8.GetString(sendbuf));
+                        //Console.WriteLine(Encoding.UTF8.GetString(dgram));
+                        //LogHelper.Log.WriteLine("m - search received");
+                        if (IsDgramRaspberryId(dgram))
+                        {
+                            // csak azt írjuk ki, ha jó MSearch jött felénk.
+                            LogHelper.Log.WriteLine("M-SEARCH Received from: {0}", buffer.SenderIPEndPoint.ToString());
+                            //Console.WriteLine("VÁLASZOLUNK!");
+                            Socket responseSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                            byte[] sendbuf = CreateAliveResponse(getLocalIPAddress(), identifier, identifier, 900);
+                            //byte[] sendbuf = Encoding.UTF8.GetBytes(identifier);
+                            //Console.WriteLine(Encoding.UTF8.GetString(sendbuf));
+                            responseSocket.SendTo(sendbuf, buffer.SenderIPEndPoint);
+                            //Console.WriteLine("Response sent to: {0}\n{1}", buffer.SenderIPEndPoint, Encoding.UTF8.GetString(sendbuf));
+                        }
                     }
                 }
             }
@@ -156,35 +162,40 @@ namespace iContrAll.SsdpServerLib
                 alive_response, maxAge, DateTime.Now.ToString("r"), location, os, user_agent, searchType, usn));
         }
 
-        void OnAsyncResultReceived(IAsyncResult asyncResult)
-        {
-            var buffer = (ReceiveBuffer)asyncResult.AsyncState;
+        //void OnAsyncResultReceived(IAsyncResult asyncResult)
+        //{
+        //    var buffer = (ReceiveBuffer)asyncResult.AsyncState;
 
-            try
-            {
-                buffer.BytesReceived = buffer.Socket.EndReceiveFrom(asyncResult, ref buffer.SenderEndPoint);
+        //    try
+        //    {
+        //        buffer.BytesReceived = buffer.Socket.EndReceiveFrom(asyncResult, ref buffer.SenderEndPoint);
 
-                var dgram = buffer.Buffer;
-                if (dgram != null && dgram.Length > 0 && IsDgramMSearch(dgram))
-                {
-                    Socket responseSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                    byte[] sendbuf = CreateAliveResponse(getLocalIPAddress(), identifier, identifier, 900);
+        //        var dgram = buffer.Buffer;
+        //        if (dgram != null && dgram.Length > 0 && IsDgramMSearch(dgram))
+        //        {
+        //            Socket responseSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        //            byte[] sendbuf = CreateAliveResponse(getLocalIPAddress(), identifier, identifier, 900);
 
-                    responseSocket.BeginSendTo(sendbuf, 0, sendbuf.Length, SocketFlags.None, buffer.SenderEndPoint, null, null);
-                }
-            }
-            catch (ObjectDisposedException)
-            {
-                // Socket already disposed... just ignore this and exit
-                // TODO: nem történhet meg!
-                return;
-            }
+        //            responseSocket.BeginSendTo(sendbuf, 0, sendbuf.Length, SocketFlags.None, buffer.SenderEndPoint, null, null);
+        //        }
+        //    }
+        //    catch (ObjectDisposedException)
+        //    {
+        //        // Socket already disposed... just ignore this and exit
+        //        // TODO: nem történhet meg!
+        //        Console.WriteLine();
+        //        return;
+        //    }
 
-            ReadResult(buffer);
-        }
+        //    ReadResult(buffer);
+        //}
         // TODO: ellenőrizni, hogy ASCII-e
         static readonly byte[] fingerprint_msearch = Encoding.ASCII.GetBytes("M-SEARCH * HTTP/1.1\r\n");
 
+        //static readonly string raspberry_id = "DEVICE:" + ConfigFileManager.ConfigurationManager.LoginId;
+        //static readonly byte[] fingerprint_raspberryId = Encoding.ASCII.GetBytes(raspberry_id);
+
+        // TODO: ez szar
         private bool IsDgramMSearch(byte[] check)
         {
             int offSet = 0;
@@ -206,6 +217,48 @@ namespace iContrAll.SsdpServerLib
             }
 
             return true;
+        }
+
+        private bool IsDgramRaspberryId(byte[] check)
+        {
+            //int offSet = 0;
+            //for (int i = 0; i < check.Length; i++)
+            //{
+            //    if (ToUpper(check[i]) == fingerprint_raspberryId[0])
+            //    {
+            //        offSet = i;
+            //        break;
+            //    }
+            //}
+
+            //for (int i = 0; i < fingerprint_raspberryId.Length + offSet; i++)
+            //{
+            //    if (ToUpper(check[i]) != fingerprint_raspberryId[i])
+            //    {
+            //        return false;
+            //    }
+            //}
+
+            string raspberry_id = "DEVICE:" + ConfigFileManager.ConfigurationManager.LoginId;
+            //LogHelper.Log.WriteLine("SSDP raspberry_id: {0}", raspberry_id);
+            byte[] fingerprint_raspberryId = Encoding.ASCII.GetBytes(raspberry_id);
+
+            int found = 0;
+            for (int i = 0; i < check.Length; i++)
+            {
+                if (check[i] == fingerprint_raspberryId[found])
+                {
+                    if (++found == fingerprint_raspberryId.Length)
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    found = 0;
+                }
+            }
+            return false;
         }
 
         static byte ToUpper(byte b)

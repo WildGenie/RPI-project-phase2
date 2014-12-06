@@ -1,1 +1,0 @@
-sudo mono /home/pi/Desktop/IContrAll/iContrAll/iContrAll.TcpServer/bin/Debug/iContrAll.TcpServer.exe alpha.icontrall.hu 1123 alpha.icontrall.hu /home/pi/server.p12 allcontri

@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace iContrAll.TcpServer
 {
@@ -28,7 +25,6 @@ namespace iContrAll.TcpServer
             string ip = remoteEndPoint.Substring(0, remoteEndPoint.IndexOf(':'));
             int port = int.Parse(remoteEndPoint.Substring(remoteEndPoint.IndexOf(':')+1));
             this.RemoteEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
-            // this.RemoteEndPoint = client.Client.RemoteEndPoint;
         }
 
         public int Read(byte[] buffer, int offset, int size)
@@ -50,11 +46,7 @@ namespace iContrAll.TcpServer
         public void Close()
         {
             this.sslStream.Close();
-            this.tcpClient.GetStream().Close();
             this.tcpClient.Close();
         }
-
-
-
     }
 }

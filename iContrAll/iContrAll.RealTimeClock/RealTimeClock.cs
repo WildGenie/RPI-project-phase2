@@ -7,17 +7,26 @@ using System.Threading.Tasks;
 
 namespace iContrAll.RealTimeClock
 {
-    // TODO: IDisposable
-    public class RealTimeClock
+    // TODO: Singleton, static
+    public static class RealTimeClock
     {
-        int fd;
-        bool initOK = false;
+        public static DateTime Now
+        {
+            get
+            {
+                return GetDateTime();
+            }
+        }
 
-        public DateTime GetDateTime()
+        static int fd;
+        static bool initOK = false;
+
+        public static DateTime GetDateTime()
         {
             try
             {
-                DateTime now = new NetworkTime().GetDateTime(true);
+                DateTime now = new NetworkTime().GetDateTime(false);
+                new Thread(() => Synchronize()).Start();
                 return now;
             }
             catch (NoServerFoundException ex)
@@ -27,12 +36,13 @@ namespace iContrAll.RealTimeClock
             }
         }
 
-        public bool Synchronize()
+        public static bool Synchronize()
         {
             if (!initOK) fd = InitI2C();
-
+            
             try
             {
+                if (!initOK) throw new Exception("Failed to initialize I2C modul");
                 DateTime now = new NetworkTime().GetDateTime(true);
 
                 Console.WriteLine("The current date and time: {0:yyyy/MM/dd H:mm:ss}", now); 
@@ -63,30 +73,42 @@ namespace iContrAll.RealTimeClock
                 Console.WriteLine(ex.Message);
                 return false;
             }
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine(ex.Message);
-            //    return false;
-            //}
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
         }
 
-        private int InitI2C()
+        private static int InitI2C()
         {
-            if (Init.WiringPiSetup() < 0)
+            try
             {
-                Console.WriteLine("unable to set wiring pi\n");
+                if (Init.WiringPiSetup() < 0)
+                {
+                    Console.WriteLine("unable to set wiring pi\n");
+                    initOK = false;
+                    return -1;
+                }
+
+                int fd = I2C.wiringPiI2CSetup(0x68);
+                if (fd < 0)
+                {
+                    Console.WriteLine("Error opening I2C channel.");
+                    initOK = false;
+                    return fd;
+                }
+
+                initOK = true;
+
+                return fd;
+            }
+            catch(Exception)
+            {
+                Console.WriteLine("RealTimeClock init failed.");
+                initOK = false;
                 return -1;
             }
-
-            int fd = I2C.wiringPiI2CSetup(0x68);
-            if (fd < 0)
-            {
-                Console.WriteLine("Error opening I2C channel.");
-            }
-
-            initOK = true;
-
-            return fd;
         }
 
         /// <summary>
@@ -94,7 +116,7 @@ namespace iContrAll.RealTimeClock
         /// </summary>
         /// <param name="nbr">A paraméterként várt kétjegyű szám.</param>
         /// <returns>E.g. 24 => |0010|0100|</returns>
-        int Nbr2BcdInt(int nbr)
+        static int Nbr2BcdInt(int nbr)
         {
             if (nbr < 0 || nbr > 99) throw new ArgumentException();
 
@@ -134,7 +156,7 @@ namespace iContrAll.RealTimeClock
         /// Converts a 2 byte BCD format number to an integer 
         /// </summary>
         /// <param name="bcd"></param>
-        int Bcd2Int(int bcd)
+        static int Bcd2Int(int bcd)
         {
             string bin = Convert.ToString(bcd, 2);
             int l = bin.Length;
@@ -152,27 +174,42 @@ namespace iContrAll.RealTimeClock
             return nbr;
         }
 
-        public DateTime Read()
+        static DateTime Read()
         {
-            if (!initOK) fd = InitI2C();
+            //if (!initOK) fd = InitI2C();
+            if (!Synchronize()) Console.WriteLine("Syncronization failed");
 
-            int s = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 0));
-            int m = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 1));
-            int h = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 2));
-            // int dname = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 3));
-            int d = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 4));
-            int mo = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 5));
-            int y = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 6));
-            
-            // TODO: legkésőbb 2099. december 31-én megoldást találni. A jelenlegi eszközön az RTC csak kétszámjegyű éveket tárol. Kelt: 2014. október 3.
-            y+=2000;
+            try
+            {
+                int s = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 0));
+                int m = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 1));
+                int h = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 2));
+                int dname = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 3));
+                int d = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 4));
+                int mo = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 5));
+                int y = Bcd2Int(I2C.wiringPiI2CReadReg8(fd, 6));
 
-            //int c = I2C.wiringPiI2CReadReg8(fd, 7);
-            // Console.WriteLine("The current datetime is: {0}.{1}.{2}. {3},  {4}:{5}:{6}", y, mo, d, dname, h, m, s);
-            DateTime now = new DateTime(y, mo, d, h, m, s);
-            
+                // TODO: legkésőbb 2099. december 31-én megoldást találni. A jelenlegi eszközön az RTC csak kétszámjegyű éveket tárol. Kelt: 2014. október 3.
+                y += 2000;
 
-            return now;
+                //int c = I2C.wiringPiI2CReadReg8(fd, 7);
+                Console.WriteLine("The current datetime is: {0}.{1}.{2}. {3},  {4}:{5}:{6}", y, mo, d, dname, h, m, s);
+                
+                DateTime now = new DateTime(y, mo, d, h, m, s);
+                return now;
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                Console.WriteLine("Exception: {0}", ex.Message);
+                Console.WriteLine("RealTimeClock modul has not been initialized yet, returning with system clock.");
+                return DateTime.Now;
+            }
+            catch(Exception)
+            {
+                Console.WriteLine("Cannot read from I2C -> Returning system datetime");
+                return DateTime.Now;
+            }
         }
+
     }
 }
